@@ -1,0 +1,32 @@
+name: drone_configurator
+description: Betaflight-style configurator for ESP32 drone FC.
+
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: ">=3.10.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  provider: ^6.1.1
+  fl_chart: ^0.68.0
+  flutter_cube: ^0.1.2
+  usb_serial: ^0.4.0
+  flutter_bluetooth_serial: ^0.4.0
+  web_socket_channel: ^2.4.0
+  path_provider: ^2.1.1
+  shared_preferences: ^2.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/presets.json
+    - assets/drone.obj  # Add simple drone model
