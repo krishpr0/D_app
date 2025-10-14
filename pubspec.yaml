@@ -13,9 +13,7 @@ dependencies:
     sdk: flutter
   provider: ^6.1.1
   fl_chart: ^0.68.0
-  flutter_cube: ^0.1.2
-  usb_serial: ^0.4.0
-  flutter_bluetooth_serial: ^0.4.0
+  flutter_cube: ^0.1.1
   web_socket_channel: ^2.4.0
   path_provider: ^2.1.1
   shared_preferences: ^2.2.2
@@ -29,4 +27,4 @@ flutter:
   uses-material-design: true
   assets:
     - assets/presets.json
-    - assets/drone.obj  # Add simple drone model
+    - assets/drone.obj

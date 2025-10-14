@@ -1,0 +1,22 @@
+{
+  "Default": {
+
+    "roll_p": 4.0,
+    "roll_i": 0.1,
+    "roll_d": 18.0,
+    "pitch_p": 4.0,
+    "pitch_i": 0.1,
+    "pitch_d": 18.0
+},
+
+  "Aggressive": {
+
+    "roll_p": 6.0,
+    "roll_i": 0.2,
+    "rolld_d": 25.0,
+    "pitch_p": 6.0,
+    "pitch_i": 0.2,
+    "pitch_d": 25.0
+
+  }
+}
