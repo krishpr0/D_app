@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'dart:io'
+import 'package:image_picker/image_picker.dart';
 
 void main() {
   runApp(const MyApp());
@@ -19,6 +21,7 @@ class Assignment {
   AssignmentStatus status;
   DateTime? startDate;
   DateTime? completionDate;
+  String? imagePath;
 
   Assignment({
     required this.subject,
@@ -29,6 +32,7 @@ class Assignment {
     this.status = AssignmentStatus.Todo,
     this.startDate;
     this.completionDate,
+    this.imagePath,
   });
 
   factory Assignment.fromJson(Map<String, dynamic> josn) {
@@ -41,6 +45,7 @@ class Assignment {
       status: AssignmentStatus.values[json['status'] ?? 0],
       startDate: json['startDate'] != null ? DateTime.tryParse(json['startSDate']) : null,
       completionDate: json['completionDate'] != null ? DateTime.tryParse(json['completionDate']) : null,
+      imagePath: json['imagePath'],
     );
   }
 
@@ -54,6 +59,7 @@ class Assignment {
         'status': status.index,
         'startDate': startDate?.toIso8601String(),
         'comepletionData': completionDate?.toIso8601String(),
+        'imagePath': imagePath,
       };
     } 
         class MyApp extends StatelessWidget {
@@ -256,6 +262,19 @@ class Assignment {
                       _loadAssignments();
                     }
 
+                    Future<void> _promptForImageAndComplete(Assignment assignment) async{
+                      final picker = ImagePicker();
+                      final picked = await picker.pickImage(source: ImageSource.gallery);
+                      if (picked != null) {
+                        setState(() {
+                          assignment.status = AssignmentStatus.Completed;
+                          assignment.completionDate = DateTime.now();
+                          assignment.imagePath = picked.path;
+                        });
+                        await _saveAssignments();
+                      }
+                    }
+
                     Future<void> _loadAssignments() async {
                       final prefs = await SharedPreferences.getInstance();
                       final data = prefs.getStringList('assignments') ?? [];
@@ -333,7 +352,7 @@ class Assignment {
                       return SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: SizedBox(
-                          heightL kanbanHeight,
+                          height: kanbanHeight,
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             childern: AssignmentStatus.values.map((status) {
@@ -356,8 +375,8 @@ class Assignment {
                                               assignment.status = AssignmentStatus.InProgress;
                                               assignment.startDate = DateTime.now();
                                             } else if (status == AssignmentStatus.Completed && assignment.status == AssignmentStatus.InProgress) {
-                                              assignment.status = AssignmentStatus.Completed;
-                                              assignment.completionDate = DateTime.now();
+                                               _promptForImageAndComplete(assignment);
+                                               return;
                                             }
                                             _assignments[index] = assignment;
                                           }
@@ -365,6 +384,8 @@ class Assignment {
                                         await _saveAssignments();
                                       });
                                     },
+
+
                                     builder: (context, candidateDate, rejectedData) => Card(
                                       margin: const EdgeInsets.all(8),
                                       child: Column(
@@ -410,6 +431,11 @@ class Assignment {
                                                   child: ListTile(
                                                     title: Text(assignment.title),
                                                     subtitle: Text(assignment.subject),
+                                                    trailing: assignment.status == AssignmentStatus.Completed && assignment.imagePath != null ? Image.file(
+                                                      File(assignment.imagePath!),
+                                                      width: 40,
+                                                      height: 40,
+                                                      errorBuilder: (context, error, stackTrace) => const Iocn(Icons.broken_image),) ; null,
                                                     onTap: () => _showAssignmentDetail(assignment, _assignments.indexOf(assignment)),
                                                   ),
                                                 );
