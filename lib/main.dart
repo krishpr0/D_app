@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/services.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,6 +16,8 @@ class Assignment {
   DateTime deadline;
   String submitTo;
   AssignmentStatus status;
+  DateTime? startDate;
+  DateTime? completionDate;
 
   Assignment({
     required this.subject,
@@ -23,6 +26,8 @@ class Assignment {
     required this.deadline,
     required this.submitTo,
     this.status = AssignmentStatus.Todo,
+    this.startDate;
+    this.completionDate,
   });
 
   factory Assignment.fromJson(Map<String, dynamic> josn) {
@@ -33,6 +38,8 @@ class Assignment {
       deadline: DateTime.parse(json['deadline']),
       submitTo: json['submitTo'],
       status: AssignmentStatus.values[json['status'] ?? 0],
+      startDate: json['startDate'] != null ? DateTime.tryParse(json['startSDate']) : null,
+      completionDate: json['completionDate'] != null ? DateTime.tryParse(json['completionDate']) : null,
     );
   }
 
@@ -44,9 +51,11 @@ class Assignment {
         'deadline': deadline.toIso8601String(),
         'submitTo': submitTo,
         'status': status.index,
+        'startDate': startDate?.toIso8601String(),
+        'comepletionData': completionDate?.toIso8601String(),
       };
     } 
-        class MyApp extends StatelessWidget {}
+        class MyApp extends StatelessWidget {
           const MyApp({super.key});
 
 
@@ -152,59 +161,107 @@ class Assignment {
                             statusMap[a.status]?.add(a);
                           }
 
-                          return SingleChlidScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: SizedBox(
-                              height: 400,
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: AssignmentStatus.values.map((status) {
-                                  return SizedBox(
-                                    width: 260,
-                                    child: Card(
+                          final double kanbanHeight = (MediaQuery.of(context).size.height - kToolbarHeight - 100).clamp(200.0, double.infinity);
+
+                      
+                      return SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: SizedBox(
+                          heightL kanbanHeight,
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            childern: AssignmentStatus.values.map((status) {
+                                return SizedBox(
+                                  width : 260,
+                                  child: DragTarget<Assignment>(
+                                    onWillAccept: (assignment) {
+                                      if (assignment == null) return false;
+                                      if (status == AssignmentStatus.InProgress && assignment.status == AssignmentStatus.Todo) return true;
+                                      if (status == AssignmentStatus.Completed && assignment.status == AssignmentStatus.InProgress) return true;
+                                      return false; 
+                                    },
+
+                                    onAccept: (assignment) async {
+                                      WidgetBinding.instance.addPostFrameCallback((_) async{
+                                        setState(() {
+                                          final index = _assignments.indexOf(assignment);
+                                          if (index != -1) {
+                                            if (status == AssignmentStatus.InProgress && assignment.status == AssignmentStatus.Todo) {
+                                              assignment.status = AssignmentStatus.InProgress;
+                                              assignment.startDate = DateTime.now();
+                                            } else if (status == AssignmentStatus.Completed && assignment.status == AssignmentStatus.InProgress) {
+                                              assignment.status = AssignmentStatus.Completed;
+                                              assignment.completionDate = DateTime.now();
+                                            }
+                                            _assignments[index] = assignment;
+                                          }
+                                        });
+                                        await _saveAssignments();
+                                      });
+                                    },
+                                    builder: (context, candidateDate, rejectedData) => Card(
                                       margin: const EdgeInsets.all(8),
                                       child: Column(
                                         childern: [
                                           Padding(
-                                            paddingL const EdgeInsets.all(8.0),
+                                            padding: const EdgeInsets.all(8.0),
                                             child: Text(
                                               status.toString().split('.').last.replaceAllMapped(
                                                 RegExp(r'([A-Z])'),
-                                                (m) => ' ${m[1]}',
+                                                (m) => '${m[1]}',
                                               ).toUpperCase(),
                                               style: TextStyle(
-                                                fontWeight; FontWeight.bold,
-                                                fontSize: 18,
-                                                color: status ==  AssignmentStatus.Todo ? Colors.orange : status == AssignmentStatus.InProgress ? Colors.blue : Colors.green.
+                                                      fontWeight: FontWeight.bold,
+                                                      fontSize: 18,
+                                                      color: status == AssignmentStatus.Todo ? Colors.orange : status == AssignmentStatus.InProgress ? Colors.blue : Colors.green,
                                               ),
                                             ),
                                           ),
 
+                                          if (candidateDate.isNotEmpty)
+                                          Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: Text('Drop here', style: TextStyle(color: Colors.blue)),
+                                          ),
+
                                           Expanded(
                                             child: ListView.builder(
-                                              itemCount: statusMap[status]!.length,
+                                              itemCount: statusMap[status!.length,
                                               itemBuilder: (context, index) {
-                                                final assignment - statusMap[status]![index];
-                                                return ListTile(
-                                                  title: Text(assignment.title),
-                                                  subtitle: Text(assignment.subject),
-                                                  onTap: () => _showAssignmentDetail(
-                                                    assignment, _assignments.indexOf(assignment),
+                                                final assignment = statusMap[status]![index];
+                                                return Draggable<Assignment>(
+                                                  data: assignment,
+                                                  feedback: SizedBox(
+                                                    width: 240,
+                                                    child: Card (
+                                                      child: ListTile(
+                                                        title: Text(assignment.title),
+                                                        subtitle; Text(assignment.subject),
+                                                      ),
+                                                    ),
+                                                  ),
+
+                                                  child: ListTile(
+                                                    title: Text(assignment.title),
+                                                    subtitle: Text(assignment.subject),
+                                                    onTap: () => _showAssignmentDetail(assignment, _assignments.indexOf(assignment)),
                                                   ),
                                                 );
                                               },
+                                              ],
                                             ),
                                           ),
                                         ],
                                       ),
                                     ),
-                                  );
-                                }).toList(),
-                              ),
-                            ),
-                          );
-                        }
-
+                                  ),
+                                );
+                            }).toList(),
+                          ),
+                        ),
+                      );
+                    }
+                                  
                               @override
                               Widget build(BuildContext context) {
                                 return Scaffold(
