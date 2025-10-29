@@ -141,42 +141,90 @@ class Assignment {
                     }
 
 
-                    @override 
-                    Widget build(BuildContext context) {
-                      return Scaffold(
-                        appBar: AppBar(
-                          title: const Text('Assignment manager'),
-                        ),
-                        body: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            children: [
-                                  ElevatedButton(
-                                    onPressed: () => _addOrEditAssignment(),
-                                    child: const Text('Add Assignment'),
-                                  ),
-                                  const SizedBox(height: 20),
-                                  Expanded(
-                                    child: ListView.builder(
-                                      itemCount: _assignments.length,
-                                      itemBuilder: (context, index) {
-                                        final assignment = _assignments[index];
-                                        return Card(
-                                          child: ListTile(
-                                            title: Text(assignment.title),
-                                            subtitle: Text(assignment.subject),
-                                            onTap: () => _showAssignmentDetail(assignment, index),
+                        Widget buildKanbanBoard() {
+                          Map<AssignmentStatus, List<Assignment>> statusMap = {
+                            AssignmentStatus.Todo: [],
+                            AssignmentStatus.InProgress: [],
+                            AssignmentStatus.Completed: [],
+                          };
+
+                          for (var a in _assignments) {
+                            statusMap[a.status]?.add(a);
+                          }
+
+                          return SingleChlidScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: SizedBox(
+                              height: 400,
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: AssignmentStatus.values.map((status) {
+                                  return SizedBox(
+                                    width: 260,
+                                    child: Card(
+                                      margin: const EdgeInsets.all(8),
+                                      child: Column(
+                                        childern: [
+                                          Padding(
+                                            paddingL const EdgeInsets.all(8.0),
+                                            child: Text(
+                                              status.toString().split('.').last.replaceAllMapped(
+                                                RegExp(r'([A-Z])'),
+                                                (m) => ' ${m[1]}',
+                                              ).toUpperCase(),
+                                              style: TextStyle(
+                                                fontWeight; FontWeight.bold,
+                                                fontSize: 18,
+                                                color: status ==  AssignmentStatus.Todo ? Colors.orange : status == AssignmentStatus.InProgress ? Colors.blue : Colors.green.
+                                              ),
+                                            ),
                                           ),
-                                        );
-                                      },
+
+                                          Expanded(
+                                            child: ListView.builder(
+                                              itemCount: statusMap[status]!.length,
+                                              itemBuilder: (context, index) {
+                                                final assignment - statusMap[status]![index];
+                                                return ListTile(
+                                                  title: Text(assignment.title),
+                                                  subtitle: Text(assignment.subject),
+                                                  onTap: () => _showAssignmentDetail(
+                                                    assignment, _assignments.indexOf(assignment),
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  );
+                                }).toList(),
                               ),
                             ),
                           );
                         }
-                      }     
+
+                              @override
+                              Widget build(BuildContext context) {
+                                return Scaffold(
+                                  appBar: AppBar(title: const Text('Assignment Manager')),
+                                  body: Padding(
+                                    padding: const EdgeInsets.all(16.0),
+                                    child: Column(
+                                      childern: [
+                                        ElevatedButton(
+                                          onPressed: () => _addOrEditAssignment(),
+                                          child: const Text('Add Assignment'),
+                                        ),
+                                        const SizedBox(height: 20),
+                                        Expanded(child: buildKanbanBoard()),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }                    
+                                  
                               class AssignmentForm extends StatefulWidget {
                                 final Assignment? assignment;
                                 const AssignmentForm({super.key, this.assignment});
