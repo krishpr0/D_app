@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
+import 'package:fl_chart/fl_chart.dart';
 
 void main() {
   runApp(const MyApp());
@@ -71,6 +72,171 @@ class Assignment {
             );
           }
         }
+
+                class DashboardPage extends StatefulWidget {
+                  final List<Assignment> assignment;
+                  final void Function(Assignment, int) onAssignmentTap;
+
+                  const DashboardPage({
+                    super.key,
+                    required this.assignments,
+                    required this.onAssignmentTap,
+                  });
+
+                  @override 
+                  State<DashboardPage> createState() => _DashboardPageState();
+                }
+
+
+                class _DashboardPageState extends State<DashboardPage> {
+                  AssignmentStatus? _statusFilter;
+                  String _search = '';
+
+                  @override
+                  Widget build(BuildContext context) {
+                    final TodoCount = widget.assignments.where((a) => a.status == AssignmentStatus.Todo).length;
+                    final  inProgressCount = widget.assignments.where((a) => a.status == AssignmentStatus.InProgress).length;
+                    final completedCount = widget.assignments.where((a) => a.status == AssignmentStatus.Completed).length;
+                     
+
+                     final filtered = widget.assignments.where((a) {
+                      final matchesStatus = _statusFilter == nul || a.status == _statusFilter;
+                      final matchesStatus = _search.isEmpty || a.title.toLowerCase().contains(_search,toLowerCase());
+                      return matchesStatus && matchesStatus;
+                     }).toList();
+
+                     return Scaffold(
+                      appBar: AppBar(title: const Text('Dashaboard')),
+                      body: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          childern: [
+                              Row(
+                                mainAxisAlignment: mainAxisAlignment.spaceEvenly,
+                                childern: [
+                                  _statusCountCard('To Do', TodoCount, Colors.orange),
+                                  _statusCountCard('In Progress', inProgressCount, Colors.blue),
+                                  _statusCountCard('Completed', completedCount, Colors.green),
+                                ],
+                              ),
+
+                              const SizedBox(height: 16),
+                              //Pie chart
+
+                              SizedBox(
+                                height: 160,
+                                child: PieChart(
+                                  PieChartData(
+                                    sections: [
+                                      PieChartSectionData(
+                                        value: TodoCount.toDouble(),
+                                        color: Colors.orange,
+                                        title: 'To Do',
+                                      ),
+
+                                      PieChartSectionData(
+                                        value: inProgressCount.toDouble(),
+                                        color: Colors.blue,
+                                        title: 'In Progress',
+                                      ),
+
+                                      PieChartSectionData(
+                                        value: completedCount.toDouble(),
+                                        color: Colors.green,
+                                        title: 'Completed',
+                                      ),
+                                    ],
+                                    sectionsSpace: 2,
+                                    centerSpaceRadius: 30,                                    
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(height: 16),
+                                      
+                              Row(
+                              children: [
+                                DropdownButton<AssignmentStatus?>(
+                                  value: _statusFilter,
+                                     hint: const Text('Filter by Status'),
+                                     items: [
+                                       const DropdownMenuItem(value: null, child: Text('All')),
+                                         ...AssignmentStatus.values.map((status) => DropdownMenuItem(
+                                           value: status,
+                                              child: Text(status.toString().split('.').last),
+                                            )),
+                                       ],
+                                       onChanged: (val) => setState(() => _statusFilter = val),
+                                         ),
+                                         const SizedBox(width: 16),
+                                         Expanded(
+                                        child: TextField(
+                                          decoration: const InputDecoration(
+                                            hintText: 'Search by title or subject',
+                                                   prefixIcon: Icon(Icons.search),
+                                                 ),
+                                           onChanged: (val) => setState(() => _search = val),
+                                         ),
+                                       ),
+                                     ],
+                                   ),
+                            const SizedBox(height: 8),
+                                Expanded(
+                                  child: filtered.isEmpty
+                                      ? const Center(child: Text('No assignments found.'))
+                                      : ListView.builder(
+                                          itemCount: filtered.length,
+                                          itemBuilder: (context, idx) {
+                                            final a = filtered[idx];
+                                            return Card(
+                                              child: ListTile(
+                                                  title: Text(a.title),
+                                                  subtitle: Text(a.subject),
+                                                  onTap: () => widget.onAssignmentTap(a, widget.assignments.indexOf(a)),
+                                                ),
+                                              );
+                                            },
+                                          ),  
+                                        ),
+                                     ],
+                                   ),
+                                 ),
+                                );
+                               } 
+
+                                    Widget _statusCountCard(String label, int count, Color color) {
+                                      return Card(
+                                        color: color.withOpacity(0.1),
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 18),
+                                          child: Column(
+                                            childern: [
+                                              Text(label, style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+                                              Text('$count', style: TextStyle(fontSize: 20, color: color, fontWeight: FontWeight.bold)),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  }
+
+                                  actions: [
+                                    IconButton(
+                                      icon: const Icon(Icons.dashboard),
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => DashboardPage(
+                                              assignments: _assignments,
+                                              onAssignmentTap: (a, idx) => _showAssignmentDetail(a, idx),
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ],
+
 
                 class AssignmentManager extends StatefulWidget {
                   const AssignmentManager({super.key});
