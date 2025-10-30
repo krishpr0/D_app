@@ -12,6 +12,31 @@ void main() {
 
 enum AssignmentStatus { Todo, InProgress, Completed}
 
+enum SubjectName {
+  English,
+  Mathematics,
+  Physics,
+  Chemistry,
+  Nepali,
+  ComputerOrganiztionAndArchitecture,
+  OperatingSystem,
+  JavaProgramming,
+  WebAndMobileApplicationDevelopment,
+}
+
+enum TeacherName {
+  MrManojSapkota,
+  MrSushatAdhikari,
+  MrMachaKaji,
+  MrSurendraKhadka,
+  MrPramondArcharya,
+  MsSantoshiThokar,
+  MsRejaThapa,
+  MsMalikaJoshi,
+  MsGeetaKhatri,
+
+}
+
 class Assignment {
   String subject;
   String title;
@@ -49,6 +74,7 @@ class Assignment {
     );
   }
 
+
   Map<String, dynamic> toJson() =>
       {
         'subject': subject,
@@ -62,6 +88,44 @@ class Assignment {
         'imagePath': imagePath,
       };
     } 
+
+          List<String> dynamicSubjects = [];
+          List<String> dynamicTeachers = [];
+        
+          
+          String prettifyEnumName(String name) {
+            final withSpaces = name.replaceAllMapped(RegExp(r'([A-z])'), (m) => '${m[1]}');
+            return withSpaces[0].toUpperCase() + withSpaces.substring(1);
+          }
+
+          List<String> getAllSubjects() {
+            return [
+              ...Subjective.values.map((e) => prettifyEnumName(e.name)),
+              ...dynamicSubjects,
+            ];
+          }
+
+          List<String> getAllTeachers() {
+            return [
+              ...TeacherName.values.map((e) => prettifyEnumName(e.name),
+              ...dynamicTeachers,)
+            ];
+          }
+
+
+          void addsubject(String subject) {
+            if (!dynamicSubjects.contains(subject)) {
+              dynamicSubjects.add(subject);
+            }
+          }
+
+          void addTeacher(String teacher) {
+            if (!dynamicTeachers.contains(teacher)) {
+              dynamicTeachers.add(teacher)''
+            }
+          }
+
+
         class MyApp extends StatelessWidget {
           const MyApp({super.key});
 
@@ -480,6 +544,7 @@ class Assignment {
 
                                 @override
                                 State<AssignmentForm> createState() => _AssignmentFormState();
+                                
                               }
 
 
@@ -525,6 +590,104 @@ class Assignment {
                                                 _deadline = picked;
                                               });
                                             }
+                                          }
+
+
+                                          Widget _buildSubjectField() {
+                                            return DropdownButtonFormField<String>(
+                                              value: _subjectController.text.isNotEmpty ?_subjectController.text : null,
+                                              items: getAllSubjects().map((subject) {
+                                                return DropdownMenuItem(value: subject, child: Text(subject));
+                                              }).toList(),
+                                              onChanged: (val) {
+                                                setState(() {
+                                                  _subjectController.text = val ?? '';
+                                                });
+                                              },
+                                              decoration: const InputDecoration(labelText: 'Subject Name'),
+                                            );
+                                          }
+
+
+                                          Widget _buildAddSubjectButton(BuildContext context) {
+                                            return TextButton(
+                                              onPressed: () async {
+                                                final newSubject = await showDialog<String>(
+                                                  context: context,
+                                                  builder: (context) {
+                                                    final controller: TextEditingController();
+                                                    return AlertDialog(
+                                                      title:  const Text('Add Subject'),
+                                                      context: TextField(
+                                                        controller: controller,
+                                                        decoration: const InputDecoration(labelText: 'Subject Name'),
+                                                      ),
+                                                      actions: [
+                                                        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+                                                        TextButton(onPressed: () => Navigator.pop(context, controller.text), child: const Text('Add')),
+                                                      ],
+                                                    );
+                                                  },
+                                                );
+
+                                                if (newSubject != null && newSubject.trim().isNotEmpty) {
+                                                  setState(() {
+                                                    addSubject(newSubject.trim());
+                                                    _subjectController.text = newSubject.trim();
+                                                  });
+                                                }
+                                              },
+                                              child: const Text('Add Subject'),
+                                            );
+                                          }
+
+
+                                          Widget _buildTeacherField() {
+                                            return DropdownButtonFormField<String>(
+                                              value: _submitToController.text.isNotEmpty ? _submitToController.text : null,
+                                              items: getAllTeachers().map((teacher) {
+                                                return DropdownMenuItem(value: teacher, child: Text(teacher));
+                                              }).toList(),
+                                              onChanged: (val) {
+                                                setState(() {
+                                                  _subjectToController.text = val ?? '';
+                                                });
+                                              },
+                                              decoration: const InputDecoration(labelText: 'Submit To (Teacher)'),
+                                            );
+                                          }
+
+
+                                          Widget _buildAddTeacherButton(BuildContext context) {
+                                            return TextButton(
+                                              onPressed: () async {
+                                                final newTeacher = await showDialog<String>(
+                                                  context: context,
+                                                  builder: (context) {
+                                                    final controller = TextEditingController();
+                                                    return AlterDialog(
+                                                      title: const Text('Add Teacher'),
+                                                      content: TextField(
+                                                        controller: controller,
+                                                        decoration: const InputDecoration(labelText: 'Teacher Nmae'),
+                                                      ),
+                                                      actions: [
+                                                        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+                                                        TextButton(onPressed: () => Navigator.pop(context, controller.text), child: const Text('Add')),
+                                                      ],
+                                                    );
+                                                  },
+                                                );
+
+                                                if (newTeacher != null && newTeacher.trim().isNotEmpty) {
+                                                  setState(() {
+                                                    addTeacher(newTeacher.trim());
+                                                    _submitToController.text = newTeacher.trim();
+                                                  });
+                                                }
+                                              },
+                                              child: const Text('Add Teacher'),
+                                            )
                                           }
 
 
