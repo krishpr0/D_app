@@ -51,6 +51,17 @@ class Assignment {
   DateTime? completionDate;
   String? imagePath;
   Priotrity priotrity;
+  Duration? timeSpent;
+  DateTime? timerStartTime;
+
+  void startTimer() => timerStartTime = DateTime.now();
+  void stopTimer() {
+    if (timerStartTime != null) {
+      timeSpent = (timeSpent ?? Duration.zero) + DateTime.now().difference(timerStartTime!);
+      timerStartTime = null;
+    }
+  }
+}
 
   Assignment({
     required this.subject,
@@ -493,7 +504,7 @@ class _CalendarPageState extends State<CalendarPage> {
                                   case Priotrity.High: return Colors.red;
                                   case Priotrity.Urget: return Colors.deepPurple;
                                 }
-                              }
+
 
 
                       return SingleChildScrollView(
@@ -879,6 +890,24 @@ class _CalendarPageState extends State<CalendarPage> {
                                                           IconButton(icon: const Icon(Icons.delete), onPressed: onDelete),
                                                         ],
                                                       ),
+
+                                                      Widget _buildTimerControls(Assignment assignment) {
+                                                        return Row(
+                                                          children: [
+                                                            IconButton(
+                                                              icon: Icon(assignment.timerStartTime == null ? Icons.play_arrow : Icons.stop),
+                                                              onPressed: () {
+                                                                if (assignment.timerStartTime == null) {
+                                                                  assignment.startTimer();
+                                                                } else {
+                                                                  assignment.stopTimer();
+                                                                }
+                                                              },
+                                                            ),
+                                                            Text('Time spent: ${_formatDuration(assignment.timeSpent ?? Duration.zero)}'),
+                                                          ],
+                                                        );
+                                                      }
 
                                                       body: Padding(
                                                         padding: const EdgeInsets.all(16.0),
