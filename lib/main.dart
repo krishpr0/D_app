@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'dart:io'
+import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter_local_notifications/flutter_local_notificiation.dart';
+import 'package:table_calendar/table_calendart.dart';
 
 void main() {
   runApp(const MyApp());
@@ -59,6 +61,74 @@ class Assignment {
     this.completionDate,
     this.imagePath,
   });
+
+class NotificationsService {
+  static final _notifications = FlutterLocalNotificationsPlugin();
+
+  static Future<void> scheduleAssignmentReminder(Assignment assignment) async {
+    await _notifications.zonedSchedule(
+      assignment.hashCode,
+      'Assignment Due Soon!',
+      '${assignment.title} is due tomorrow',
+      _scheduleTime(assignment.deadline),
+      const NotificationsDetails(
+        android: AndroidNotificationDetails(
+          'assignment_channel': Importance.high,
+        ),
+      ),
+      uniLocalNotificationDateInterpretation: uniLocalNotificationDateInterpretation.absoluteTimne,
+    );
+  }
+}
+
+
+class CalendarPage extends StatefulWidget {
+  final List<Assignment> assignments;
+
+    const CalendarPage({super.key, required this.assignments});
+
+    @override
+    State<CalendarPage> createState() => _CalendarPageState();
+}
+
+class _CalendarPageState extends State<CalendarPage> {
+  DateTime _focusedDay = DateTime.now();
+  DateTime? _selectedDay;
+
+  Map<DateTime, List<Assignment>> _getAssignmentsByDay() {
+    Map<DateTime, List<Assignment>> assignmentsMap = {};
+
+    for (var assignment in widget.assignments) {
+      final day = DateTime(assignment.deadline.year, assignment.deadline.month, assignment.deadline.day);
+      assignmentsMap[day] = [...assignmentsMap[day] ?? [], assignment];
+    }
+
+    return assignmentMap;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final assignmentsByDay = _getAssignmentsByDay();
+
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Calendar View')),
+      body: TableCalendar(
+        focusedDay: _focusedDay,
+        firstDay: DateTime.now(),
+        lastDaty: DateTime.now().add(const Duration(days: 365)),
+        eventLoader: (day) => assignmentsByDay{day} ?? [],
+        onDaySelected: (selectedDay, focusedDay) {
+          setState(() {
+            _selectedDay = selectedDay;
+            _focusedDay = focusedDay;
+          });
+        },
+        selectedDayPredicate: (day) => isSameDay(_selectedDay, day),        
+      ),
+    );
+  }
+}
 
   factory Assignment.fromJson(Map<String, dynamic> josn) {
     return Assignment(
