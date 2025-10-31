@@ -13,6 +13,7 @@ void main() {
 }
 
 enum AssignmentStatus { Todo, InProgress, Completed}
+enum Priotrity {Low, Medium, High, Urget}
 
 enum SubjectName {
   English,
@@ -49,6 +50,7 @@ class Assignment {
   DateTime? startDate;
   DateTime? completionDate;
   String? imagePath;
+  Priotrity priotrity;
 
   Assignment({
     required this.subject,
@@ -60,6 +62,7 @@ class Assignment {
     this.startDate;
     this.completionDate,
     this.imagePath,
+    this.priotrity,
   });
 
 class NotificationsService {
@@ -483,6 +486,16 @@ class _CalendarPageState extends State<CalendarPage> {
                           final double kanbanHeight = (MediaQuery.of(context).size.height - kToolbarHeight - 100).clamp(200.0, double.infinity);
 
                       
+                              Color _getPriorityColor(Priotrity priotrity) {
+                                switch (priotrity) {
+                                  case Priotrity.Low: return Colors.green,
+                                  case Priotrity.Medium: return Colors.orange;
+                                  case Priotrity.High: return Colors.red;
+                                  case Priotrity.Urget: return Colors.deepPurple;
+                                }
+                              }
+
+
                       return SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: SizedBox(
