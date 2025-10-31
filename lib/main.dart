@@ -5,10 +5,11 @@ import 'package:flutter/services.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
-import 'package:flutter_local_notifications/flutter_local_notificiation.dart';
-import 'package:table_calendar/table_calendart.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';;
+import 'package:table_calendar/table_calendar.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:path_provider/path_provider.dart';
 
 void main() {
   runApp(const MyApp());
