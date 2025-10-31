@@ -7,6 +7,8 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_local_notifications/flutter_local_notificiation.dart';
 import 'package:table_calendar/table_calendart.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:share_plus/share_plus.dart';
 
 void main() {
   runApp(const MyApp());
@@ -95,6 +97,59 @@ class NotificationsService {
   }
 }
 
+class ExportService {
+  static Future<void> exportToCSV(List<Assignment> assignments) async {
+    final csvData = StringBuffer();
+    csvData.writeIn('Subject, Title, Description, Deadline, Status, Priotrity');
+
+    for (var assignment in assignments) {
+      csvData.writeIn('${assignment.subject}, ${assignment.title}.'
+      '${assignment.description}, ${assignment.deadline.toIso8601String()},'
+      '${assignment.status}, ${assignment.priotrity}');
+    }
+
+    final tempDir = await getTemporaryDirectory();
+    final file = File('${tempDir.path}/assignment_${DateTime.now().millisecondsSinceEpoch}.csv');
+    await file.writeAsString(csvData.toString());
+
+    await Share.shareXFiles([XFile(file.path)]);
+  }
+
+      static Future<List<Assignment>> importFromCSV() async {
+        FilePickerResult? result = await FilePicker.platform.pickFiles(
+          type: FileType.custom,
+          allowedExtensions: ['csv'],
+        );
+
+
+        if (result != null) {
+          final file = File(result.files.single.path!);
+          final csvData = await file.readAsString();
+
+          return _parseCSVData(csvData);
+        }
+        return [];
+      }
+}
+
+class ThemeService with ChangeNotifier {
+  bool _isDarkMode = false;
+
+  bool get _isDarkMode  = _isDarkMode;
+  ThemeData get currentTheme => _isDarkMode ? _darkTheme: _lightTheme;
+
+
+  void toggleTheme() {
+    _isDarkMode = !_isDarkMode;
+    notifyListeners();
+  }
+
+  static final _lightTheme = ThemeData.light();
+  static final _darkTheme = ThemeData.dark().copyWith(
+    ScaffoldBackgroundColor: Colors.grey[900],
+    cardColor: Colors.grey[800],
+  );
+}
 
 class CalendarPage extends StatefulWidget {
   final List<Assignment> assignments;
@@ -103,6 +158,33 @@ class CalendarPage extends StatefulWidget {
 
     @override
     State<CalendarPage> createState() => _CalendarPageState();
+}
+
+class analyticsPage extends StatelessWidget {
+  final List<Assignment> assignment;
+
+  const analyticsPage({super.key, required this.assignment});
+
+  @override
+  Widget build(BuildContext context) {
+    final completedThisWeek = assignments.where((a) => a.completionDate != null && a.completionDate!.isAfter(DateTime.now().subtract(const Duration(days: 7)))).length;
+
+
+     final averageCompletionTime = _calculateAverageCompletionTime();
+     final mostProductiveDay = _findMostProductiveDay();
+
+     return Scaffold(
+      appBar: AppBar(title: const Text('Analystics')),
+      body: ListView(
+        children: [
+          _buildStatCard('Completed This wekk', '$completedThisWeek assignments'),
+          _buildStatCard('Average Completime Time', '${averageCompletionTime.inHours} hours'),
+          _buildStatCard('Most Productive Day', mostProductiveDay),
+          _buildSubjectDistributionChar(),
+        ],
+      ),
+     );
+  }
 }
 
 class _CalendarPageState extends State<CalendarPage> {
@@ -171,7 +253,7 @@ class _CalendarPageState extends State<CalendarPage> {
         'comepletionData': completionDate?.toIso8601String(),
         'imagePath': imagePath,
       };
-    } 
+     
 
           List<String> dynamicSubjects = [];
           List<String> dynamicTeachers = [];
@@ -389,6 +471,10 @@ class _CalendarPageState extends State<CalendarPage> {
                                         );
                                       },
                                     ),
+                                    IconButton(
+                                      icon: Icon(ThemeService.isDarkMode ? Icons.light_mode : Icons.dark_mode),
+                                      onPressed: () => ThemeService.toggleTheme(),
+                                    )
                                   ],
 
 
