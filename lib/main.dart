@@ -306,17 +306,31 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
     final ThemeService _themeService = ThemeService();
 
-    @override
-    Widget build(BuildContext context) {
-        return MaterialApp(
-            title: 'Assignment manager',
-            theme: ThemeData.light(),
-            darkTheme: ThemeData.dark(),
-            themeMode: _themeService.isDarkMode ? ThemeMode.dark : ThemeMode.light, 
-            home: AssignmentManager(themeService: _themeService),
-            debugShowCheckedModeBanner: false,
-        );
-    }
+        @override   
+        void initState() {
+            super.initState();
+            _themeService.addListener(() {
+                setState(() {});
+            });
+        }
+
+        @override 
+        void dispose() {
+            _themeService.removeListener(() {});
+            super.dispose();
+        }
+
+        @override
+        Widget build(BuildContext content) {
+            return MaterialApp(
+                title: 'Assignment Manager',
+                theme: ThemeData.light(),
+                darkTheme: ThemeData.dark(),
+                themeMode: _themeService.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+                home: AssignmentManager(themeService: _themeService),
+                debugShowCheckedModeBanner: false,
+            );
+        }
 }
 
 
