@@ -1,0 +1,50 @@
+Core Features:
+
+
+Assignment CURD: Create, Read, Update, Delete Assignments
+
+Kanban Board: Visual drag and drop, format(Todo -> InProgress -> Completed)
+
+Dashboard: Charts and Statistics with filter and search
+
+Image Capture: Take photos when copmpleting Assignments
+
+Dynamic Subjects/Teachers: Add Customs Subjects and Teachers
+
+Priority System: Low/Medium/High/Urgent with colors gradaing,
+
+Time Tracking: Start/Stop timer for Assignments
+
+Calendar View: See Assignment on Calendar
+
+
+Analytics: COmpletion stats, productive days, subject distribution
+
+Export/Import: CSV export & Import (for spreadsheet format and more)
+
+Theme Toggle: Toggle between themes
+
+Notifications: This feature is ont quite sure works or not for now( Assignment due reminders)
+
+
+
+
+
+
+
+
+Some of the Technical feauttres:
+
+Local Storage
+Drap And drop
+Search and filter
+Image Gallyer
+File Picker
+Data Sharing
+ 
+
+
+Feature tyring to Add
+
+Cloud,
+Viewing of Data from Teachers pov,
