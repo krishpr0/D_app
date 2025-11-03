@@ -433,14 +433,27 @@ class _AssignmentManagerState extends State<AssignmentManager> {
   Future<void> _promptForImageAndComplete(Assignment assignment) async {
     final picker = ImagePicker();
     final picked = await picker.pickImage(source: ImageSource.gallery);
-    if (picked != null) {
+    
       setState(() {
-        assignment.status = AssignmentStatus.Completed;
-        assignment.completionDate = DateTime.now();
-        assignment.imagePath = picked.path;
+          final index = _assignments.indexOf(assignment);
+          if (index != -1) {
+            _assignments[index] = Assignment(
+              subject: assignment.subject,
+              title: assignment.title,
+              description: assignment.description,
+              deadline: assignment.deadline,
+              submitTo: assignment.submitTo,
+              status: AssignmentStatus.Completed,
+              startDate: assignment.startDate,
+              completionDate: DateTime.now(),
+              imagePath: picked?.path,
+              priority: assignment.priority,
+              timeSpent: assignment.timeSpent,
+              timerStartTime: assignment.timerStartTime,
+            );
+          }
       });
-      await _saveAssignment();
-    }
+        await _saveAssignment();
   }
 
 
@@ -467,6 +480,7 @@ class _AssignmentManagerState extends State<AssignmentManager> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: AssignmentStatus.values.map((status) {
+            final columnAssignments = statusMap[status] ?? [];
             return SizedBox(
               width: 260,
               child: DragTarget<Assignment>(
@@ -476,21 +490,41 @@ class _AssignmentManagerState extends State<AssignmentManager> {
                   if (status == AssignmentStatus.Completed && assignment.status == AssignmentStatus.InProgress) return true;
                   return false;
                 },
-                onAccept: (assignment) async {
-                    setState(() {
-                      final index = _assignments.indexOf(assignment);
-                      if (index != -1) {
-                        if (status == AssignmentStatus.InProgress && assignment.status == AssignmentStatus.InProgress) {
-                          assignment.status = AssignmentStatus.InProgress;
-                          assignment.startDate = DateTime.now();
-                        } else if (status == AssignmentStatus.Completed && assignment.status == AssignmentStatus.InProgress) {
-                          _promptForImageAndComplete(_assignments[index]);
-                          return;
-                        }
-                      }
-                    });
-                     _saveAssignment();
-                },
+              onAccept: (assignment) {
+  setState(() {
+    final index = _assignments.indexOf(assignment);
+    if (index != -1) {
+      Assignment updatedAssignment = Assignment(
+        subject: assignment.subject,
+        title: assignment.title,
+        description: assignment.description,
+        deadline: assignment.deadline,
+        submitTo: assignment.submitTo,
+        status: status, // 
+        startDate: assignment.startDate,
+        completionDate: assignment.completionDate,
+        imagePath: assignment.imagePath,
+        priority: assignment.priority,
+        timeSpent: assignment.timeSpent,
+        timerStartTime: assignment.timerStartTime,
+      );
+
+      
+      if (status == AssignmentStatus.InProgress && assignment.status == AssignmentStatus.Todo) {
+        updatedAssignment.startDate = DateTime.now();
+      }
+
+     
+      if (status == AssignmentStatus.Completed && assignment.status == AssignmentStatus.InProgress) {
+        _promptForImageAndComplete(updatedAssignment);
+      } else {
+        
+        _assignments[index] = updatedAssignment;
+      }
+    }
+  });
+  _saveAssignment();
+},
 
                 builder: (context, candidateDate, rejectionData) => Card(
                   margin: const EdgeInsets.all(8),
