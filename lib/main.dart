@@ -97,8 +97,8 @@ class Assignment {
       deadline: DateTime.parse(json['deadline']),
       submitTo: json['submitTo'],
       status: AssignmentStatus.values[json['status'] ?? 0],
-      startDate: json['StartDate'] != null ? DateTime.tryParse(json['startDate']) : null,
-      completionDate: json['completionDate'] != null ? DateTime.tryParse(json['completionDate']) : null,
+    startDate: json['startDate'] != null ? DateTime.tryParse(json['startDate']) : null,
+    completionDate: json['completionDate'] != null ? DateTime.tryParse(json['completionDate']) : null,
       imagePath: json['imagePath'],
       priority: Priority.values[json['priority'] ?? 1],
       timeSpent: json['timeSpent'] != null ? Duration(microseconds: json['timeSpent']) : null,
@@ -1393,7 +1393,7 @@ class AnalyticsPage extends StatelessWidget {
     if (completedByDay.isEmpty) return 'No Data';
 
     final mostProductive = completedByDay.entries.reduce((a,b) => a.value > b.value ? a:b);
-    final days = ['Monday', 'Tuesday', 'Wednesday', 'Thrusday', 'Friday', 'Saturday', 'Sunday'];
+    final days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     return days[int.parse(mostProductive.key) - 1];
   }
 
