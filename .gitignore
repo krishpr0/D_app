@@ -1,48 +1,47 @@
-# Android
-**/android/**/build/
-**/android/**/.gradle
-**/android/**/local.properties
-**/android/**/GeneratedPluginRegistrant.java
-
-# iOS
-**/ios/**/Pods/
-**/ios/**/.symlinks/
-**/ios/**/profile
-**/ios/**/xcuserdata
-**/ios/.generated/
-**/ios/Flutter/App.framework/
-**/ios/Flutter/Flutter.framework/
-**/ios/Flutter/Flutter.podspec
-**/ios/Flutter/Generated.xcconfig
-**/ios/Flutter/app.flx
-**/ios/Flutter/app.zip
-**/ios/Flutter/flutter_assets/
-**/ios/ServiceDefinitions.json
-**/ios/Runner/GeneratedPluginRegistrant.*
-
-# Build
-/build/
-**/build/
-
-# Flutter
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-.packages
+# Flutter/Dart specific
+*.dart_tool/
+*.flutter-plugins
+*.flutter-plugins-dependencies
+*.packages
 .pub-cache/
 .pub/
-.pubignore
+build/
+flutter_export_environment.sh
+generated_plugin_registrant.dart
 
-# Web
-.webpack/
+# Android specific (since your errors involve Android intermediates)
+android/.gradle
+android/app/build/
+android/app/release/
+android/app/debug/
+android/local.properties
+android/*.iml
+android/.idea/
+*.apk
+*.ap_
+*.dex
+*.class
+*.aab
+*.so  # Ignores shared object files like libflutter.so
 
-# IDE
-.vscode/
+# iOS specific (if applicable)
+ios/.generated/
+ios/Flutter/.last_build_id
+ios/Flutter/App.framework
+ios/Flutter/Flutter.framework
+ios/Flutter/Generated.xcconfig
+ios/Flutter/ephemeral/
+ios/Flutter/flutter_export_environment.sh
+ios/Podfile.lock
+ios/Pods/
+ios/Runner.xcworkspace/contents.xcworkspacedata
+ios/Runner/GeneratedPluginRegistrant.*
+
+# General ignores
+.DS_Store  # macOS junk
+Thumbs.db  # Windows junk
+*.log
+*.tmp
+*.swp
 .idea/
-*.iml
-*.iws
-*.ipr
-
-# OS
-.DS_Store
-Thumbs.db
+.vscode/
