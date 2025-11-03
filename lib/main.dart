@@ -382,7 +382,7 @@ class _AssignmentManagerState extends State<AssignmentManager> {
   Future<void> _saveAssignment() async {
     final prefs = await SharedPreferences.getInstance();
     final data = _assignments.map((a) => jsonEncode(a.toJson())).toList();
-    await prefs.setStringList('assignments', data);
+    await prefs.setStringList('Assignments', data);
   }
 
   void _addOrEditAssignment({Assignment? assignment, int? index}) async {
@@ -477,7 +477,6 @@ class _AssignmentManagerState extends State<AssignmentManager> {
                   return false;
                 },
                 onAccept: (assignment) async {
-                  SchedulerBinding.instance.addPostFrameCallback((_) async {
                     setState(() {
                       final index = _assignments.indexOf(assignment);
                       if (index != -1) {
@@ -485,14 +484,12 @@ class _AssignmentManagerState extends State<AssignmentManager> {
                           assignment.status = AssignmentStatus.InProgress;
                           assignment.startDate = DateTime.now();
                         } else if (status == AssignmentStatus.Completed && assignment.status == AssignmentStatus.InProgress) {
-                          _promptForImageAndComplete(assignment);
+                          _promptForImageAndComplete(_assignments[index]);
                           return;
                         }
-                        _assignments[index] = assignment;
                       }
                     });
-                    await _saveAssignment();
-                  });
+                     _saveAssignment();
                 },
 
                 builder: (context, candidateDate, rejectionData) => Card(
@@ -531,70 +528,70 @@ class _AssignmentManagerState extends State<AssignmentManager> {
                           itemBuilder: (context, index) {
                             final assignment = statusMap[status]![index];
 
-                            return Draggable<Assignment>(
-                              data: assignment,
-                              feedback: SizedBox(
-                                width: 240,
-                                child: Card(
-                                  child: ListTile(
-                                    title: Text(
-                                      assignment.title,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
-                                        color: Colors.black87,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    subtitle: Text(
-                                      assignment.subject,
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        color: Colors.black54,
-                                        fontStyle: FontStyle.italic,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ),
-                              ),
-
-                              child: ListTile(
-                                title: Text(
-                                  assignment.title,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                    color: Colors.black87,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                subtitle: Text(
-                                  assignment.subject,
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.black54,
-                                    fontStyle: FontStyle.italic,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                trailing: assignment.status == AssignmentStatus.Completed && assignment.imagePath != null ? Image.file(
-                                  File(assignment.imagePath!),
-                                  width: 40,
-                                  height: 40,
-                                  errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image),
-                                )
-                                    :null,
-                                onTap: () => _showAssignmentDetail(
-                                  assignment,
-                                  _assignments.indexOf(assignment),
-                                ),
-                              ),
-                            );
+                             return Draggable<Assignment>(
+                               data: assignment,
+                               feedback: SizedBox(
+                                 width: 240,
+                                 child: Card(
+                                   child: ListTile(
+                                     title: Text(
+                                       assignment.title,
+                                       style: const TextStyle(
+                                         fontWeight: FontWeight.bold,
+                                         fontSize: 16,
+                                         color: Colors.black87, // Fixed: Removed Theme.of(context)
+                                       ),
+                                       maxLines: 1,
+                                       overflow: TextOverflow.ellipsis,
+                                     ),
+                                     subtitle: Text(
+                                       assignment.subject,
+                                       style: const TextStyle(
+                                         fontSize: 13,
+                                         color: Colors.black54, // Fixed: Removed Theme.of(context)
+                                         fontStyle: FontStyle.italic,
+                                       ),
+                                       maxLines: 1,
+                                       overflow: TextOverflow.ellipsis,
+                                     ),
+                                   ),
+                                 ),
+                               ),
+                             
+                               child: ListTile(
+                                 title: Text(
+                                   assignment.title,
+                                   style: TextStyle(
+                                     fontWeight: FontWeight.bold,
+                                     fontSize: 16,
+                                     color: Theme.of(context).colorScheme.onSurface,
+                                   ),
+                                   maxLines: 1,
+                                   overflow: TextOverflow.ellipsis,
+                                 ),
+                                 subtitle: Text(
+                                   assignment.subject,
+                                   style: TextStyle(
+                                     fontSize: 13,
+                                     color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                     fontStyle: FontStyle.italic,
+                                   ),
+                                   maxLines: 1,
+                                   overflow: TextOverflow.ellipsis,
+                                 ),
+                                 trailing: assignment.status == AssignmentStatus.Completed && assignment.imagePath != null ? Image.file(
+                                   File(assignment.imagePath!),
+                                   width: 40,
+                                   height: 40,
+                                   errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image),
+                                 )
+                                     : null,
+                                 onTap: () => _showAssignmentDetail(
+                                   assignment,
+                                   _assignments.indexOf(assignment),
+                                 ),
+                               ),
+                             );
                           },
                         ),
                       ),
@@ -1323,37 +1320,113 @@ class CalendarPage extends StatefulWidget {
 class _CalendarPageState extends State<CalendarPage> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
+  late Map<DateTime, List<Assignment>> _assignmentsByDay;
+
+  @override
+  void initState() {
+    super.initState();
+    _assignmentsByDay = _getAssignmentsByDay();
+  }
 
   Map<DateTime, List<Assignment>> _getAssignmentsByDay() {
-    Map<DateTime, List<Assignment>> assignmentsMap = {};
+    final Map<DateTime, List<Assignment>> assignmentsMap = {}; // Fixed: Added "final" and proper type
 
     for (var assignment in widget.assignments) {
       final day = DateTime(assignment.deadline.year, assignment.deadline.month, assignment.deadline.day);
-      assignmentsMap[day] = [...assignmentsMap[day] ?? [], assignment];
+      if (!assignmentsMap.containsKey(day)) {
+        assignmentsMap[day] = [];
+      }
+      assignmentsMap[day]!.add(assignment);
     }
 
     return assignmentsMap;
   }
 
+  List<Assignment> _getAssignmentsForSelectedDay() {
+    if (_selectedDay == null) return [];
+    return _assignmentsByDay[_selectedDay!] ?? [];
+  }
 
   @override
   Widget build(BuildContext context) {
-    final assignmentsByDay = _getAssignmentsByDay();
+    final assignmentsForSelectedDay = _getAssignmentsForSelectedDay();
 
     return Scaffold(
       appBar: AppBar(title: const Text('Calendar View')),
-      body: TableCalendar(
-        focusedDay: _focusedDay,
-        firstDay: DateTime.now().subtract(const Duration(days: 365)),
-        lastDay: DateTime.now().add(const Duration(days: 365)),
-        eventLoader: (day) => assignmentsByDay[day] ?? [],
-        onDaySelected: (selectedDay, focusedDay) {
-          setState(() {
-            _selectedDay = selectedDay;
-            _focusedDay = focusedDay;
-          });
-        },
-        selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+      body: Column(
+        children: [
+          TableCalendar(
+            focusedDay: _focusedDay,
+            firstDay: DateTime.now().subtract(const Duration(days: 365)),
+            lastDay: DateTime.now().add(const Duration(days: 365)),
+            eventLoader: (day) => _assignmentsByDay[day] ?? [],
+            onDaySelected: (selectedDay, focusedDay) {
+              setState(() {
+                _selectedDay = selectedDay;
+                _focusedDay = focusedDay;
+              });
+            },
+            selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+            calendarBuilders: CalendarBuilders(
+              markerBuilder: (context, day, events) {
+                if (events.isNotEmpty) {
+                  return Positioned(
+                    right: 1,
+                    bottom: 1,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        '${events.length}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  );
+                }
+                return null;
+              },
+            ),
+          ),
+          if (_selectedDay != null) ...[
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                'Assignments due on ${_selectedDay!.toLocal().toString().split(' ')[0]}',
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
+            Expanded(
+              child: assignmentsForSelectedDay.isEmpty
+                  ? const Center(child: Text('No assignments due on this day'))
+                  : ListView.builder(
+                      itemCount: assignmentsForSelectedDay.length,
+                      itemBuilder: (context, index) {
+                        final assignment = assignmentsForSelectedDay[index];
+                        return Card(
+                          child: ListTile(
+                            title: Text(assignment.title),
+                            subtitle: Text(assignment.subject),
+                            trailing: Container(
+                              width: 12,
+                              height: 12,
+                              decoration: BoxDecoration(
+                                color: _getPriorityColor(assignment.priority),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ],
       ),
     );
   }
