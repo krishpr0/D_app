@@ -171,7 +171,7 @@ class ExportService {
         final file = File('${tempDir.path}/assignments_${DateTime.now().millisecondsSinceEpoch}.csv');
         await file.writeAsString(csvData.toString());
 
-        await Share.shareFiles([(file.path)]);
+        await Share.shareXFiles([XFile(file.path)]);
     }
 
     static Future<List<Assignment>> importFromCSV() async {
@@ -614,7 +614,7 @@ Widget buildKanbanBoard() {
     Widget build(BuildContext context) {
         return Scaffold(
             appBar: AppBar(
-                title: const Text('ASsignment Manager'),
+                title: const Text('Assignment Manager'),
                 actions: [
                     //Buttons for Dashboard
                     IconButton(
@@ -830,7 +830,7 @@ class _AssignmentFormState extends State<AssignmentForm> {
                     });
                 }
             },
-            child: const Text('ADD Subject'),
+            child: const Text('Add Subject'),
         );
     }
 
@@ -846,7 +846,7 @@ class _AssignmentFormState extends State<AssignmentForm> {
                     _submitToController.text = val ?? '';
                 });
             },
-            decoration: const InputDecoration(labelText: 'Submit TO TEahcer'),
+            decoration: const InputDecoration(labelText: 'Submit To Teacher'),
         );
     }
 

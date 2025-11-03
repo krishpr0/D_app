@@ -1,0 +1,1 @@
+ /home/crish/StudioProjects/schoolapp/.dart_tool/flutter_build/b083f9d39e97ddac77fb13fa967eef55/native_assets.json: 
