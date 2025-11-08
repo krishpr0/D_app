@@ -243,7 +243,7 @@ class ThemeService with ChangeNotifier {
 //6. Helper function for subjects and Teachers
 
 String prettifyEnumName(String name) {
-  final withSpaces = name.replaceAllMapped(RegExp(r'([A-Z])'), (m) => '${m[1]}');
+  final withSpaces = name.replaceAllMapped(RegExp(r'([A-Z])'), (m) => ' ${m[1]}');
   return withSpaces[0].toUpperCase() + withSpaces.substring(1);
 }
 
@@ -1076,7 +1076,8 @@ class AssignmentDetail extends StatelessWidget {
       appBar: AppBar(
         title: Text(assignment.title),
         actions: [
-          IconButton(icon: const Icon(Icons.edit), onPressed: onDelete),
+          IconButton(icon: const Icon(Icons.edit), onPressed: onEdit),
+          IconButton(icon: const Icon(Icons.delete), onPressed: onDelete),
         ],
       ),
 
@@ -1381,7 +1382,8 @@ class _CalendarPageState extends State<CalendarPage> {
   }
 
   List<Assignment> _getAssignmentsForDay(DateTime day) {
-    return _assignmentsByDay[day] ?? [];
+    final normalizedDay = DateTime(day.year, day.month, day.day);
+    return _assignmentsByDay[normalizedDay] ?? [];
   }
 
   @override
@@ -1429,40 +1431,22 @@ class _CalendarPageState extends State<CalendarPage> {
                 }
                 return null;
               },
-              todayBuilder: (context, day, focusedDay) {
-                final assignmentsForDay = _getAssignmentsForDay(day);
-                return Container(
-                  margin: const EdgeInsets.all(4.0),
-                  decoration: BoxDecoration(
-                    color: assignmentsForDay.isNotEmpty ? Colors.red.withOpacity(0.3) : Colors.blue.withOpacity(0.3),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.blue),
-                  ),
-                  child: Center(
-                    child: Text(
-                      '${day.day}',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: assignmentsForDay.isNotEmpty ? Colors.red : Colors.blue,
-                      ),
-                    ),
-                  ),
-                );
-              },
               defaultBuilder: (context, day, focusedDay) {
                 final assignmentsForDay = _getAssignmentsForDay(day);
+                final isToday = isSameDay(day, DateTime.now());
                 return Container(
                   margin: const EdgeInsets.all(4.0),
                   decoration: BoxDecoration(
-                    color: assignmentsForDay.isNotEmpty ? Colors.red.withOpacity(0.2) : null,
+                    color: assignmentsForDay.isNotEmpty ? Colors.red.withOpacity(0.3) : isToday ? Colors.blue.withOpacity(0.3) : null,
                     shape: BoxShape.circle,
+                    border: Border.all(color: assignmentsForDay.isNotEmpty ? Colors.red : isToday ? Colors.blue : Colors.transparent,),
                   ),
                   child: Center(
                     child: Text(
                       '${day.day}',
                       style: TextStyle(
                         fontWeight: assignmentsForDay.isNotEmpty ? FontWeight.bold : FontWeight.normal,
-                        color: assignmentsForDay.isNotEmpty ? Colors.red : null,
+                        color: assignmentsForDay.isNotEmpty ? Colors.red : isToday? Colors.blue : null,
                       ),
                     ),
                   ),
@@ -1473,15 +1457,15 @@ class _CalendarPageState extends State<CalendarPage> {
                 return Container(
                   margin: const EdgeInsets.all(4.0),
                   decoration: BoxDecoration(
-                    color: assignmentsForDay.isNotEmpty ? Colors.red : Theme.of(context).primaryColor,
+                    color: assignmentsForDay.isNotEmpty ? Colors.red.withOpacity(0.2) : Theme.of(context).primaryColor,
                     shape: BoxShape.circle,
                   ),
                   child: Center(
                     child: Text(
                       '${day.day}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                      style: TextStyle(
+                        fontWeight: assignmentsForDay.isNotEmpty ? FontWeight.bold : FontWeight.normal,
+                        color: assignmentsForDay.isNotEmpty ? Colors.red : null,
                       ),
                     ),
                   ),
