@@ -759,6 +759,7 @@ class _AssignmentManagerState extends State<AssignmentManager> {
 
 
 //10. Assignment Form with Teachrs and Subjects
+
 class AssignmentForm extends StatefulWidget {
   final Assignment? assignment;
   const AssignmentForm({super.key, this.assignment});
@@ -766,7 +767,6 @@ class AssignmentForm extends StatefulWidget {
   @override
   State<AssignmentForm> createState() => _AssignmentFormState();
 }
-
 class _AssignmentFormState extends State<AssignmentForm> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _subjectController;
@@ -1024,6 +1024,8 @@ class _AssignmentFormState extends State<AssignmentForm> {
 }
 
 //11. Assignment Detial with Timer
+
+
 class AssignmentDetail extends StatelessWidget {
   final Assignment assignment;
   final VoidCallback onEdit;
@@ -1145,9 +1147,8 @@ class AssignmentDetail extends StatelessWidget {
     );
   }
 }
-
-
 //12. Dashboard Page
+
 class DashboardPage extends StatefulWidget {
   final List<Assignment> assignments;
   final void Function(Assignment, int) onAssignmentTap;
@@ -1161,7 +1162,6 @@ class DashboardPage extends StatefulWidget {
   @override
   State<DashboardPage> createState() => _DashboardPageState();
 }
-
 class _DashboardPageState extends State<DashboardPage> {
   AssignmentStatus? _statusFilter;
   String _search = '';
@@ -1339,17 +1339,15 @@ class _DashboardPageState extends State<DashboardPage> {
 }
 
 
-//13. Calender Page Feature
+//13. Calendar Page Feature
 class CalendarPage extends StatefulWidget {
   final List<Assignment> assignments;
 
   const CalendarPage({super.key, required this.assignments});
 
-
   @override
   State<CalendarPage> createState() => _CalendarPageState();
 }
-
 
 class _CalendarPageState extends State<CalendarPage> {
   DateTime _focusedDay = DateTime.now();
@@ -1360,55 +1358,58 @@ class _CalendarPageState extends State<CalendarPage> {
   void initState() {
     super.initState();
     _assignmentsByDay = _getAssignmentsByDay();
+    print('Calendar initialized with ${widget.assignments.length} assignments');
+    print('Mapped to ${_assignmentsByDay.length} days');
   }
 
-  Map<DateTime, List<Assignment>> _getAssignmentsByDay() {
+    Map<DateTime, List<Assignment>> _getAssignmentsByDay() {
     final Map<DateTime, List<Assignment>> assignmentsMap = {};
 
     for (var assignment in widget.assignments) {
-      final day = DateTime(assignment.deadline.year, assignment.deadline.month, assignment.deadline.day);
+      final day = DateTime(
+        assignment.deadline.year,
+        assignment.deadline.month,
+        assignment.deadline.day
+      );
+
       if (!assignmentsMap.containsKey(day)) {
         assignmentsMap[day] = [];
       }
       assignmentsMap[day]!.add(assignment);
+      }
+    return assignmentsMap;
     }
 
-    return assignmentsMap;
-  }
-
-  List<Assignment> _getAssignmentsForSelectedDay() {
-    if (_selectedDay == null) return [];
-    return _assignmentsByDay[_selectedDay!] ?? [];
-  }
-
-  List<Assignment> _getAssignmentsForDay(DateTime day) {
+    List<Assignment> _getAssignmentsForDay(DateTime day) {
     final normalizedDay = DateTime(day.year, day.month, day.day);
-    return _assignmentsByDay[normalizedDay] ?? [];
-  }
+    final assignments = _assignmentsByDay[normalizedDay] ?? [];
+    return assignments;
+    }
 
-  @override
-  Widget build(BuildContext context) {
-    final assignmentsForSelectedDay = _getAssignmentsForSelectedDay();
-
+    @override
+    Widget build(BuildContext context) {
+    final assignmentsForSelectedDay = _selectedDay != null ? _getAssignmentsForDay(_selectedDay!) : [];
     return Scaffold(
       appBar: AppBar(title: const Text('Calendar View')),
       body: Column(
         children: [
           TableCalendar(
-            focusedDay: _focusedDay,
-            firstDay: DateTime.now().subtract(const Duration(days: 365)),
-            lastDay: DateTime.now().add(const Duration(days: 365)),
-            eventLoader: (day) => _assignmentsByDay[day] ?? [],
+              focusedDay: _focusedDay,
+              firstDay: DateTime.now().subtract(const Duration(days: 365)),
+              lastDay: DateTime.now().add(const Duration(days: 365)),
+            eventLoader: (day) => _getAssignmentsForDay(day),
             onDaySelected: (selectedDay, focusedDay) {
-              setState(() {
-                _selectedDay = selectedDay;
-                _focusedDay = focusedDay;
-              });
+                setState(() {
+                  _selectedDay = selectedDay;
+                  _focusedDay = focusedDay;
+                });
+                print('Selected Day: $selectedDay, Assignment: ${_getAssignmentsForDay(selectedDay).length}');
             },
-            selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+              selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
             calendarBuilders: CalendarBuilders(
               markerBuilder: (context, day, events) {
-                if (events.isNotEmpty) {
+                final assignmentsForDay = _getAssignmentsForDay(day);
+                if (assignmentsForDay.isNotEmpty) {
                   return Positioned(
                     right: 1,
                     bottom: 1,
@@ -1419,7 +1420,7 @@ class _CalendarPageState extends State<CalendarPage> {
                         shape: BoxShape.circle,
                       ),
                       child: Text(
-                        '${events.length}',
+                        '${assignmentsForDay.length}',
                         style: const TextStyle(
                           fontSize: 10,
                           color: Colors.white,
@@ -1431,6 +1432,7 @@ class _CalendarPageState extends State<CalendarPage> {
                 }
                 return null;
               },
+
               defaultBuilder: (context, day, focusedDay) {
                 final assignmentsForDay = _getAssignmentsForDay(day);
                 final isToday = isSameDay(day, DateTime.now());
@@ -1446,26 +1448,27 @@ class _CalendarPageState extends State<CalendarPage> {
                       '${day.day}',
                       style: TextStyle(
                         fontWeight: assignmentsForDay.isNotEmpty ? FontWeight.bold : FontWeight.normal,
-                        color: assignmentsForDay.isNotEmpty ? Colors.red : isToday? Colors.blue : null,
+                        color: assignmentsForDay.isNotEmpty ? Colors.red : isToday ? Colors.blue : null,
                       ),
                     ),
                   ),
                 );
               },
+
               selectedBuilder: (context, day, focusedDay) {
                 final assignmentsForDay = _getAssignmentsForDay(day);
                 return Container(
                   margin: const EdgeInsets.all(4.0),
                   decoration: BoxDecoration(
-                    color: assignmentsForDay.isNotEmpty ? Colors.red.withOpacity(0.2) : Theme.of(context).primaryColor,
+                    color: assignmentsForDay.isNotEmpty ? Colors.red : Theme.of(context).primaryColor,
                     shape: BoxShape.circle,
                   ),
                   child: Center(
                     child: Text(
                       '${day.day}',
-                      style: TextStyle(
-                        fontWeight: assignmentsForDay.isNotEmpty ? FontWeight.bold : FontWeight.normal,
-                        color: assignmentsForDay.isNotEmpty ? Colors.red : null,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
                     ),
                   ),
@@ -1473,33 +1476,55 @@ class _CalendarPageState extends State<CalendarPage> {
               },
             ),
           ),
+
           const SizedBox(height: 16),
           if (_selectedDay != null) ...[
             Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text(
-                'Assignments due on ${_selectedDay!.toLocal().toString().split(' ')[0]}',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              padding: const EdgeInsets.all(16.0),
+              child: Text (
+                'Assignments due on ${_selectedDay!.toLocal().toString().split('')[0]} (${assignmentsForSelectedDay.length} found)',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
             Expanded(
-              child: assignmentsForSelectedDay.isEmpty
-                  ? const Center(child: Text('No assignments due on this day'))
+              child: assignmentsForSelectedDay.isEmpty ? const Center(
+                child: Text(
+                  'No assignments due on this day',
+                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                ),
+              )
+
                   : ListView.builder(
                 itemCount: assignmentsForSelectedDay.length,
                 itemBuilder: (context, index) {
                   final assignment = assignmentsForSelectedDay[index];
                   return Card(
-                    margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: ListTile(
+                      leading: Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: _getPriorityColor(assignment.priority),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
                       title: Text(
                         assignment.title,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
+
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(assignment.subject),
+                          const SizedBox(height: 4),
+                          Text('Subject: ${assignment.subject}'),
+                          const SizedBox(height: 2),
+                          Text('Status: ${assignment.status.toString().split('.').last}'),
+                          const SizedBox(height: 2),
                           Text(
                             'Priority: ${assignment.priority.toString().split('.').last}',
                             style: TextStyle(
@@ -1509,23 +1534,18 @@ class _CalendarPageState extends State<CalendarPage> {
                           ),
                         ],
                       ),
-                      trailing: Container(
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: _getPriorityColor(assignment.priority),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
                     ),
                   );
                 },
               ),
             ),
-          ] else ...[
+          ] else ... [
             const Expanded(
               child: Center(
-                child: Text('Select a date to view assignments'),
+                child: Text(
+                  'Select a date to view assignments',
+                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                ),
               ),
             ),
           ],
@@ -1534,7 +1554,6 @@ class _CalendarPageState extends State<CalendarPage> {
     );
   }
 }
-
 
 //14. Analytics Page
 
