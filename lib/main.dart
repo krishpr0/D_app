@@ -473,22 +473,21 @@ class _AssignmentManagerState extends State<AssignmentManager> {
 
     final double KanbanHeight = (MediaQuery.of(context).size.height - kToolbarHeight - 100).clamp(200.0, double.infinity);
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: SizedBox(
-        height: KanbanHeight,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: AssignmentStatus.values.map((status) {
-            final columnAssignments = statusMap[status] ?? [];
-            return SizedBox(
-              width: 260,
-              child: DragTarget<Assignment>(
-                onWillAccept: (assignment) {
-                  if (assignment == null) return false;
-                  if (status == AssignmentStatus.InProgress && assignment.status == AssignmentStatus.Todo) return true;
-                  if (status == AssignmentStatus.Completed && assignment.status == AssignmentStatus.InProgress) return true;
-                  return false;
+      return Container(
+          height: MediaQuery.of(context).size.height - 200,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: AssignmentStatus.values.map((status) {
+                  final columnAssignments = statusMap[status] ?? [];
+                  return Expanded(
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 8),
+                    child: DragTarget<Assignment>(
+                      onWillAccept: (assignment) {
+                       if (assignment == null) return false;
+                       if (status == AssignmentStatus.InProgress && assignment.status == AssignmentStatus.Todo) return true;
+                       if (status == AssignmentStatus.Completed && assignment.status == AssignmentStatus.InProgress) return true;
+                       return false;
                 },
                 onAccept: (assignment) {
                   setState(() {
@@ -500,7 +499,7 @@ class _AssignmentManagerState extends State<AssignmentManager> {
                         description: assignment.description,
                         deadline: assignment.deadline,
                         submitTo: assignment.submitTo,
-                        status: status, //
+                        status: status,
                         startDate: assignment.startDate,
                         completionDate: assignment.completionDate,
                         imagePath: assignment.imagePath,
@@ -633,9 +632,9 @@ class _AssignmentManagerState extends State<AssignmentManager> {
                   ),
                 ),
               ),
-            );
-          }).toList(),
-        ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }
