@@ -1410,8 +1410,8 @@ class _CalendarPageState extends State<CalendarPage> {
                 final assignmentsForDay = _getAssignmentsForDay(day);
                 if (assignmentsForDay.isNotEmpty) {
                   return Positioned(
-                    right: 1,
-                    bottom: 1,
+                    right: 65,
+                    bottom: 40,
                     child: Container(
                       padding: const EdgeInsets.all(2),
                       decoration: const BoxDecoration(
