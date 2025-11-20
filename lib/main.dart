@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -951,7 +952,7 @@ class _AssignmentFormState extends State<AssignmentForm> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.assignment == null ? 'Add Assignment' : 'Edit Asignment'),
+        title: Text(widget.assignment == null ? 'Add Assignment' : 'Edit Assignment'),
       ),
 
       body: Padding(
@@ -1016,16 +1017,20 @@ class _AssignmentFormState extends State<AssignmentForm> {
         deadline: _deadline!,
         submitTo: _submitToController.text,
         priority: _priority,
+        status: widget.assignment?.status ?? AssignmentStatus.Todo,
+        startDate: widget.assignment?.startDate,
+        completionDate: widget.assignment?.completionDate,
+        imagePath: widget.assignment?.imagePath,
+        timeSpent: widget.assignment?.timeSpent,
+        timerStartTime: widget.assignment?.timerStartTime,
       );
       Navigator.pop(context, assignment);
     }
   }
 }
 
-//11. Assignment Detial with Timer
-
-
-class AssignmentDetail extends StatelessWidget {
+//11. Assignment Detail with Timer
+class AssignmentDetail extends StatefulWidget {
   final Assignment assignment;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
@@ -1035,13 +1040,61 @@ class AssignmentDetail extends StatelessWidget {
     required this.assignment,
     required this.onEdit,
     required this.onDelete,
-  });
+});
 
+  @override
+  State<AssignmentDetail> createState() => _AssignmentDetailState();
+}
 
-  Widget _buildTimerControls(Assignment assignment) {
+class _AssignmentDetailState extends State<AssignmentDetail> {
+  late Assignment _assignment;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _assignment = widget.assignment;
+    if (_assignment.timerStartTime != null) {
+      _startTimerUpdates();
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _startTimerUpdates() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_assignment.timerStartTime != null) {
+        setState(() {
+
+        });
+      } else {
+        _timer?.cancel();
+      }
+    });
+  }
+
+  void _startTimer() {
+    setState(() {
+      _assignment.startTimer();
+      _startTimerUpdates();
+    });
+  }
+
+  void _stopTimer() {
+    setState(() {
+      _assignment.stopTimer();
+      _timer?.cancel();
+    });
+  }
+
+  Widget _buildTimerControls() {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1053,18 +1106,24 @@ class AssignmentDetail extends StatelessWidget {
             Row(
               children: [
                 IconButton(
-                  icon: Icon(assignment.timerStartTime == null ? Icons.play_arrow : Icons.stop),
+                    icon: Icon(_assignment.timerStartTime == null ? Icons.play_arrow : Icons.stop),
                   onPressed: () {
-                    if (assignment.timerStartTime == null) {
-                      assignment.startTimer();
-                    } else {
-                      assignment.stopTimer();
-                    }
+                      if (_assignment.timerStartTime == null) {
+                        _startTimer();
+                      } else {
+                        _stopTimer();
+                      }
                   },
                 ),
-                Text('Time spent: ${_formatDuration(assignment.timeSpent ?? Duration.zero)}'),
+                Text('Time Spent: ${_formatDuration(_assignment.timeSpent ?? Duration.zero)}'),
               ],
             ),
+            if (_assignment.timerStartTime != null) ...[
+              const SizedBox(height: 8),
+              Text('Timer running .... Current Session: ${_formatDuration(DateTime.now().difference(_assignment.timerStartTime!))}',
+              style: const TextStyle(fontSize: 12, color: Colors.green),
+              ),
+            ],
           ],
         ),
       ),
@@ -1075,10 +1134,10 @@ class AssignmentDetail extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(assignment.title),
+        title: Text(_assignment.title),
         actions: [
-          IconButton(icon: const Icon(Icons.edit), onPressed: onEdit),
-          IconButton(icon: const Icon(Icons.delete), onPressed: onDelete),
+          IconButton(onPressed: widget.onEdit, icon: const Icon(Icons.edit)),
+          IconButton(onPressed: widget.onDelete, icon: const Icon(Icons.delete)),
         ],
       ),
 
@@ -1086,53 +1145,51 @@ class AssignmentDetail extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: ListView(
           children: [
-            ListTile(title: const Text('Subject'), subtitle: Text(assignment.subject)),
-            ListTile(title: const Text('Title'), subtitle: Text(assignment.title)),
-            ListTile(title: const Text('Description'), subtitle: Text(assignment.description)),
-            ListTile(title: const Text('Deadline'), subtitle: Text(assignment.deadline.toLocal().toString().split('')[0]),),
-            ListTile(title: const Text('Submit To'), subtitle: Text(assignment.submitTo)),
+            ListTile(title: const Text('Subject'), subtitle: Text(_assignment.subject)),
+            ListTile(title: const Text('Title'), subtitle: Text(_assignment.title)),
+            ListTile(title: const Text('Description'), subtitle: Text(_assignment.description)),
+            ListTile(title: const Text('Deadline'), subtitle: Text(_assignment.deadline.toLocal().toString().split('')[0])),
+            ListTile(title: const Text('Submiyt To'), subtitle: Text(_assignment.submitTo)),
             ListTile(title: const Text('Priority'), subtitle: Row(
               children: [
                 Container(
                   width: 12,
                   height: 12,
                   decoration: BoxDecoration(
-                    color: _getPriorityColor(assignment.priority),
+                    color: _getPriorityColor(_assignment.priority),
                     shape: BoxShape.circle,
                   ),
                 ),
                 const SizedBox(width: 8),
-                Text(assignment.priority.toString().split('.').last),
+                Text(_assignment.priority.toString().split('.').last),
               ],
             ),
             ),
+            if (_assignment.status == AssignmentStatus.InProgress) _buildTimerControls(),
+            if (_assignment.status == AssignmentStatus.Completed) ...[
 
-            if (assignment.status == AssignmentStatus.InProgress) _buildTimerControls(assignment),
-            if (assignment.status == AssignmentStatus.Completed) ...[
-
-              if (assignment.startDate != null)
+              if (_assignment.startDate != null)
                 ListTile(
                   title: const Text('Started Date'),
-                  subtitle: Text(assignment.startDate!.toLocal().toString().split('')[0]),
+                  subtitle: Text(_assignment.startDate!.toLocal().toString().split('.')[0]),
                 ),
 
-              if (assignment.completionDate != null)
+              if (_assignment.completionDate != null)
                 ListTile(
                   title: const Text('Completed Date'),
-                  subtitle: Text(assignment.completionDate!.toLocal().toString().split('')[0]),
+                  subtitle: Text(_assignment.completionDate!.toLocal().toString().split('')[0]),
                 ),
 
-              if (assignment.imagePath != null)
+              if (_assignment.imagePath != null)
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12.0),
+                    padding: const EdgeInsets.symmetric(vertical: 12.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text('Assignment Image', style: TextStyle(fontWeight: FontWeight.bold),),
-
                       const SizedBox(height: 8),
                       Image.file(
-                        File(assignment.imagePath!),
+                        File(_assignment.imagePath!),
                         height: 100,
                         errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, size: 48),
                       ),
@@ -1146,7 +1203,8 @@ class AssignmentDetail extends StatelessWidget {
     );
   }
 }
-//12. Dashboard Page
+
+//12. Dashboard Page`1
 
 class DashboardPage extends StatefulWidget {
   final List<Assignment> assignments;
