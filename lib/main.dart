@@ -10,8 +10,7 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/scheduler.dart';
+
 
 
 void main() {
@@ -143,11 +142,37 @@ class NotificationService {
 
     const NotificationDetails details = NotificationDetails(android: androidDetails);
 
+    //Reminder 1 day before deadline
+    final remindertime = assignment.deadline.subtract(const Duration(days: 1));
+    if (remindertime.isAfter(DateTime.now())) {
+      await _notifications.show(
+        assignment.hashCode,
+        'Assignments added',
+        '${assignment.title} is due on ${assignment.deadline.toLocal().toString().split('')[0]}',
+        details,
+      );
+    }
+
     await _notifications.show(
-      assignment.hashCode,
-      'ASSIGNMENT DUE SOON!!!!!',
-      '${assignment.title} is due on ${assignment.deadline.toLocal().toString().split(' ')[0]}', details,
+      assignment.hashCode + 1,
+      'ASSIGNMENT DUE TODAY!!!!!',
+      '${assignment.title} is due today',
+      details,
     );
+      //Reminder expierd notificaiton
+    final expiredTime = assignment.deadline.add(const Duration(days: 1));
+    await _notifications.show(
+      assignment.hashCode + 2,
+      'Assignment Overdue!',
+      '${assignment.title} was due yesterday',
+      details,
+    );
+  }
+
+  static Future<void> cancelAssignmentsReminders(Assignment assignment) async {
+    await _notifications.cancel(assignment.hashCode);
+    await _notifications.cancel(assignment.hashCode + 1);
+    await _notifications.cancel(assignment.hashCode + 2);
   }
 }
 
