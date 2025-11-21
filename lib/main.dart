@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ffi';
 import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -611,75 +612,77 @@ class _AssignmentManagerState extends State<AssignmentManager> {
                       Expanded(
                         child: ListView.builder(
                           itemCount: statusMap[status]!.length,
-                          itemBuilder: (context, index) {
-                            final assignment = statusMap[status]![index];
+                            itemBuilder: (context, index) {
+                              final assignment = statusMap[status]![index];
 
-                            return Draggable<Assignment>(
-                              data: assignment,
-                              feedback: SizedBox(
-                                width: 240,
-                                child: Card(
-                                  child: ListTile(
-                                    title: Text(
-                                      assignment.title,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
-                                        color: Colors.black87, // Fixed: Removed Theme.of(context)
+                              return Draggable<Assignment>(
+                                data: assignment,
+                                feedback: SizedBox(
+                                  width: 240,
+                                  child: Card(
+                                    child: ListTile(
+                                      title: Text(
+                                        assignment.title,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                          color: Colors.black87, // Fixed: Removed Theme.of(context)
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    subtitle: Text(
-                                      assignment.subject,
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        color: Colors.black54, // Fixed: Removed Theme.of(context)
-                                        fontStyle: FontStyle.italic,
+                                      subtitle: Text(
+                                        assignment.subject,
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          color: Colors.black54, // Fixed: Removed Theme.of(context)
+                                          fontStyle: FontStyle.italic,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
                                 ),
-                              ),
 
-                              child: ListTile(
-                                title: Text(
-                                  assignment.title,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                    color: Theme.of(context).colorScheme.onSurface,
+                                child: GestureDetector(
+                                  onLongPress: () => _showDeleteConfirmation(assignment, _assignments.indexOf(assignment)),
+                                child: ListTile(
+                                  title: Text(
+                                    assignment.title,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: Theme.of(context).colorScheme.onSurface,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                subtitle: Text(
-                                  assignment.subject,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                                    fontStyle: FontStyle.italic,
+                                  subtitle: Text(
+                                    assignment.subject,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                                  trailing: assignment.status == AssignmentStatus.Completed && assignment.imagePath != null ? Image.file(
+                                    File(assignment.imagePath!),
+                                    width: 40,
+                                    height: 40,
+                                    errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image),
+                                  )
+                                      : null,
+                                  onTap: () => _showAssignmentDetail(
+                                    assignment,
+                                    _assignments.indexOf(assignment),
+                                  ),
                                 ),
-                                trailing: assignment.status == AssignmentStatus.Completed && assignment.imagePath != null ? Image.file(
-                                  File(assignment.imagePath!),
-                                  width: 40,
-                                  height: 40,
-                                  errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image),
-                                )
-                                    : null,
-                                onTap: () => _showAssignmentDetail(
-                                  assignment,
-                                  _assignments.indexOf(assignment),
                                 ),
-                                onLongPress: () => _showDeleteConfirmation(assignment, _assignments.indexOf(assignment)),
-                              ),
-                            );
-                          },
+                              );
+                            },
                         ),
                       ),
                     ],
@@ -1145,6 +1148,50 @@ class _AssignmentDetailState extends State<AssignmentDetail> {
     });
   }
 
+
+  void _showFullScreenImage(BuildContext context, String imagePath) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+          builder: (context) => Scaffold(
+            appBar: AppBar(
+              title: const Text('Assignment Proof'),
+              backgroundColor: Colors.black,
+              foregroundColor: Colors.white,
+            ),
+            backgroundColor: Colors.black,
+            body: Center(
+              child: Hero(
+                  tag: imagePath,
+                  child: InteractiveViewer(
+                    panEnabled: true,
+                    minScale: 0.5,
+                    maxScale: 3.0,
+                    child: Image.file(
+                      File(imagePath),
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.broken_image, size: 67, color: Colors.white),
+                          SizedBox(height: 16),
+                          Text(
+                            'Failed to load image',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+              ),
+            ),
+            floatingActionButton: FloatingActionButton(onPressed: () => Navigator.pop(context), child: const Icon(Icons.close), backgroundColor: Colors.black54,),
+          ),
+      )
+    );
+  }
+
+
   Widget _buildTimerControls() {
     return Card(
       child: Padding(
@@ -1242,10 +1289,27 @@ class _AssignmentDetailState extends State<AssignmentDetail> {
                     children: [
                       const Text('Assignment Image', style: TextStyle(fontWeight: FontWeight.bold),),
                       const SizedBox(height: 8),
-                      Image.file(
-                        File(_assignment.imagePath!),
-                        height: 100,
-                        errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, size: 48),
+                      GestureDetector(
+                        onTap: () => _showFullScreenImage(context, _assignment.imagePath!),
+                        child: Hero(
+                          tag: _assignment.imagePath!,
+                          child: Image.file(
+                            File(_assignment.imagePath!),
+                            height: 200,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, size: 48),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Tap the image to view full screen',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                          fontStyle: FontStyle.italic,
+                        ),
                       ),
                     ],
                   ),
