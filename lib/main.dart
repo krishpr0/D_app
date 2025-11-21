@@ -180,7 +180,6 @@ class NotificationService {
 
 //4. For Exporting and Importing of Data
 
-
 class ExportService {
   static Future<void> exportToCSV(List<Assignment> assignments) async {
     final csvData = StringBuffer();
@@ -456,6 +455,34 @@ class _AssignmentManagerState extends State<AssignmentManager> {
     );
   }
 
+
+  void _showDeleteConfirmation(Assignment assignment, int index) {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Delete Assignment'),
+            content: Text('Are you sure you want to delete "${assignment.title}"?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+
+              TextButton(
+              onPressed: () {
+                  _removeAssignment(index);
+                  Navigator.pop(context);
+              },
+                  child: const Text('Delete', style: TextStyle(color: Colors.red),
+                  ),
+              ),
+            ],
+          );
+        }
+    );
+  }
+
   Future<void> _promptForImageAndComplete(Assignment assignment) async {
     final picker = ImagePicker();
     final picked = await picker.pickImage(source: ImageSource.gallery);
@@ -649,6 +676,7 @@ class _AssignmentManagerState extends State<AssignmentManager> {
                                   assignment,
                                   _assignments.indexOf(assignment),
                                 ),
+                                onLongPress: () => _showDeleteConfirmation(assignment, _assignments.indexOf(assignment)),
                               ),
                             );
                           },
@@ -682,6 +710,7 @@ class _AssignmentManagerState extends State<AssignmentManager> {
                   builder: (_) => DashboardPage(
                     assignments: _assignments,
                     onAssignmentTap: (a, idx) => _showAssignmentDetail(a, idx),
+                    onAssignmentLongPress: _showDeleteConfirmation,
                   ),
                 ),
               );
@@ -1234,11 +1263,13 @@ class _AssignmentDetailState extends State<AssignmentDetail> {
 class DashboardPage extends StatefulWidget {
   final List<Assignment> assignments;
   final void Function(Assignment, int) onAssignmentTap;
+  final void Function(Assignment, int) onAssignmentLongPress;
 
   const DashboardPage({
     super.key,
     required this.assignments,
     required this.onAssignmentTap,
+    required this.onAssignmentLongPress,
   });
 
   @override
@@ -1387,7 +1418,8 @@ class _DashboardPageState extends State<DashboardPage> {
                         errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image),
                       )
                           : null,
-                      onTap: () => widget.onAssignmentTap(a, widget.assignments.indexOf(a),),
+                      onTap: () => widget.onAssignmentTap(a, widget.assignments.indexOf(a)),
+                      onLongPress: () => widget.onAssignmentLongPress(a,widget.assignments.indexOf(a)),
                     ),
                   );
                 },
