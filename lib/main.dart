@@ -539,45 +539,55 @@ class _AssignmentManagerState extends State<AssignmentManager> {
                     child: DragTarget<Assignment>(
                       onWillAccept: (assignment) {
                        if (assignment == null) return false;
+
+                       if (status == AssignmentStatus.Completed) {
+                         return assignment.status == AssignmentStatus.Todo ||
+                             assignment.status == AssignmentStatus.InProgress;
+                       }
                        if (status == AssignmentStatus.InProgress && assignment.status == AssignmentStatus.Todo) return true;
                        if (status == AssignmentStatus.Completed && assignment.status == AssignmentStatus.InProgress) return true;
+                       if (status == AssignmentStatus.Todo && assignment.status == AssignmentStatus.InProgress) return true;
+                       if (status == AssignmentStatus.InProgress && assignment.status == AssignmentStatus.Completed) return true;
                        return false;
                 },
-                onAccept: (assignment) {
-                  setState(() {
-                    final index = _assignments.indexOf(assignment);
-                    if (index != -1) {
-                      Assignment updatedAssignment = Assignment(
-                        subject: assignment.subject,
-                        title: assignment.title,
-                        description: assignment.description,
-                        deadline: assignment.deadline,
-                        submitTo: assignment.submitTo,
-                        status: status,
-                        startDate: assignment.startDate,
-                        completionDate: assignment.completionDate,
-                        imagePath: assignment.imagePath,
-                        priority: assignment.priority,
-                        timeSpent: assignment.timeSpent,
-                        timerStartTime: assignment.timerStartTime,
-                      );
 
+                      onAccept: (assignment) {
+                        setState(() {
+                          final index = _assignments.indexOf(assignment);
+                          if (index != -1) {
+                            if (status == AssignmentStatus.Completed) {
+                              _promptForImageAndComplete(assignment);
+                            } else {
+                              Assignment updatedAssignment = Assignment(
+                                subject: assignment.subject,
+                                title: assignment.title,
+                                description: assignment.description,
+                                deadline: assignment.deadline,
+                                submitTo: assignment.submitTo,
+                                status: status,
+                                startDate: assignment.startDate,
+                                completionDate: assignment.completionDate,
+                                imagePath: assignment.imagePath,
+                                priority: assignment.priority,
+                                timeSpent: assignment.timeSpent,
+                                timerStartTime: assignment.timerStartTime,
+                              );
 
-                      if (status == AssignmentStatus.InProgress && assignment.status == AssignmentStatus.Todo) {
-                        updatedAssignment.startDate = DateTime.now();
-                      }
+                              if (status == AssignmentStatus.InProgress && assignment.status == AssignmentStatus.Todo) {
+                                updatedAssignment.startDate = DateTime.now();
+                              }
 
+                              if (status != AssignmentStatus.Completed && assignment.status == AssignmentStatus.Completed) {
+                                updatedAssignment.completionDate = null;
+                                updatedAssignment.imagePath = null;
+                              }
+                              _assignments[index] = updatedAssignment;
+                              _saveAssignment();
+                            }
+                          }
+                        });
+                      },
 
-                      if (status == AssignmentStatus.Completed && assignment.status == AssignmentStatus.InProgress) {
-                        _promptForImageAndComplete(updatedAssignment);
-                      } else {
-
-                        _assignments[index] = updatedAssignment;
-                      }
-                    }
-                  });
-                  _saveAssignment();
-                },
 
                 builder: (context, candidateDate, rejectionData) => Card(
                   margin: const EdgeInsets.all(8),
@@ -1155,7 +1165,7 @@ class _AssignmentDetailState extends State<AssignmentDetail> {
       MaterialPageRoute(
           builder: (context) => Scaffold(
             appBar: AppBar(
-              title: const Text('Assignment Proof'),
+              title: const Text('Assignment Picture'),
               backgroundColor: Colors.black,
               foregroundColor: Colors.white,
             ),
