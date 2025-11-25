@@ -213,8 +213,8 @@ List<String> dynamicTeachers = [];
         studentId: json['studentId'],
         assignmentId: json['assignmentId'],
         textContent: json['TextContnet'],
-        attachments: List<String>.from(json('attachments')),
-        submittedAt: DateTime.parse(json{'submittedAt'}),
+        attachments: List<String>.from(json['attachments']),
+        submittedAt: DateTime.parse(json['submittedAt']),
         grade: json['grade'],
         feedback: json['feedback'],
       );
@@ -290,7 +290,47 @@ class Assignment {
   };
 }
 
+class ClassroomService {
+    static final ClassroomService _instance = ClassroomService._internal();
+    factory ClassroomService() => _instance;
+    ClassroomService._internal();
 
+    List<Classroom> _classrooms = [];
+    List<ClassroomAssignment> _classroomAssignments = [];
+
+    //This part managed the classroom/ classroom managemnet
+    Future<Classroom> createClassroom(String name, String subject, String section, ClassroomUser teacher) async {
+      final classroom = Classroom (
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        name: name,
+        subject: subject,
+        section: section,
+        teacher: teacher,
+        students: [],
+        inviteCode: _generateInviteCode(),
+        createdAt: DateTime.now(),
+      );
+
+      _classrooms.add(classroom);
+      await _saveClassrooms();
+      return classroom;
+    }
+
+    Future<bool> joinClassroom(String inviteCode, ClassroomUser student) async {
+      try {
+        final classroom = _classrooms.firstWhere((c) => c.inviteCode == inviteCode);
+        if (classroom.students.any((s) => s.id == student.id)) {
+          return false;
+        }
+
+        classroom.students.add(student);
+        await _saveClassrooms();
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+}
 
 //3. For Notifications and Reminders
 
