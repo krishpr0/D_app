@@ -330,6 +330,113 @@ class ClassroomService {
         return false;
       }
     }
+
+
+    //Assignment Management
+  Future<ClassroomAssignment> createClassroomAssignment ({
+      required String classroomId,
+      required String title,
+      required String description,
+      required DateTime dueDate,
+    required int points,
+    List<String> attachments = const [],
+}) async {
+      final assignment = ClassroomAssignment(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        classroomId: classroomId,
+        title: title,
+        description: description,
+        attachments: attachments,
+        dueDate: dueDate,
+        points: points,
+        submissions: [],
+      );
+
+      _classroomAssignments.add(assignment);
+      await _saveClassroomAssignments();
+      return assignment;
+  }
+
+  Future<StudentSubmission> submitAssignment ({
+      required String assignmentId,
+      required String studentId,
+    String? textContent,
+    List<String> attachments = const [],
+})  async {
+      final submission = StudentSubmission(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        studentId: studentId,
+        assignmentId: assignmentId,
+        textContent: textContent,
+        attachments: attachments,
+        submittedAt: DateTime.now(),
+      );
+      
+      final assignment = _classroomAssignments.firstWhere((a) => a.id == assignmentId);
+      assignment.submissions.add(submission);
+
+      await _saveClassroomAssignments();
+      return submission;
+  }
+
+  //Grade submission
+  Future<void> gradeSubmission ({
+      required String assignmentId,
+    required String studentId,
+    required double grade,
+    String? feedback,
+}) async {
+      final assignment = _classroomAssignments.firstWhere((a) => a.id == assignmentId);
+      final submission = assignment.submissions.firstWhere((s) => s.studentId == studentId);
+
+      submission.grade = grade;
+      submission.feedback = feedback;
+      await _saveClassroomAssignments();
+  }
+
+    String _generateInviteCode() {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      final random = Random();
+      return String.fromCharCodes(Iterable.generate(6, (_) => chars.codeUnitAt(random.nextInt(chars.length))));
+    }
+
+    //Storage methods
+Future<void> _saveClassrooms() async {
+      final prefs = await SharedPreferences.getInstance();
+      final data = _classrooms.map((c) => jsonEncode(c.toJson())).toList();
+      await prefs.setStringList('classrooms', data);
+}
+
+
+Future<void> _saveClassroomAssignments() async {
+      final prefs = await SharedPreferences.getInstance();
+      final data = _classroomAssignments.map((a) => jsonEncode(a.toJson())).toList();
+      await prefs.setStringList('classroom_assignments', data);
+}
+
+
+Future<void> loadClassrooms() async {
+      final prefs = await SharedPreferences.getInstance();
+      final data = prefs.getStringList('classrooms') ?? [];
+      _classrooms = data.map((e) => Classroom.fromJson(jsonDecode(e))).toList();
+}
+
+
+Future<void> loadClassroomAssignments() async {
+      final prefs = await SharedPreferences.getInstance();
+      final data = prefs.getStringList('classroom_assignments') ?? [];
+      _classroomAssignments = data.map((e) => ClassroomAssignment.fromJson(jsonDecode(e))).toList();
+}
+
+//Getters
+List<Classroom> get classrooms => _classrooms;
+List<ClassroomAssignment> get classroomAssignments => _classroomAssignments;
+List<ClassroomAssignment> getAssignmentsForClassroom(String userId) {
+  return _classroomAssignments.where((a) => a.classroomId == classroomId).toList();
+}
+List<Classroom> getClassroomsForUser(String userId) {
+  return _classrooms.where((c) => c.teacher.id == userId || c.students.any((s) => s.id == userId)).toList();
+}
 }
 
 //3. For Notifications and Reminders
