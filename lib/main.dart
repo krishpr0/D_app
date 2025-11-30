@@ -1378,6 +1378,57 @@ class _JoinClassroomDialogState extends State<JoinClassroomDialog> {
   }
 
 
+  //Clasroom List Page
+class ClassroomListPage extends StatelessWidget {
+    final ClassroomService classroomService;
+    final ClassroomUser currentUser,
+
+    const ClassroomListPage ({
+      super.key,
+      required this.classroomService,
+      required this.currentUser,
+});
+
+    @override
+  Widget build(BuildContext context) {
+      final userClassrooms = classroomService.getClassroomsForUser(currentUser.id);
+
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('My Classrooms'),
+        ),
+        body: userClassrooms.isEmpty ? const Center(child: Text('No Classrooms yet. Create or join one!')) : ListView.builder(
+          itemCount: userClassrooms.length,
+          itemBuilder: (context, index) {
+            final classroom = userClassrooms[index];
+            return Card(
+              margin: const EdgeInsets.all(8.0),
+              child: ListTile(
+                leading: classroom.teacher.id == currentUser.id ? const Icon(Icons.school, color: Colors.orange) : const Icon(Icons.person, color: Colors.green),
+                title: Text(classroom.name),
+                subtitle: Text('${classroom.subject} ${classroom.section}'),
+                trailing: Text('${classroom.students.length} students'),
+                onTap: () {
+                  Navigator.push(context,
+                    MaterialPageRoute(
+                      builder: (context) => ClassroomDetailPage(
+                        classroom: classroom,
+                        classroomService: classroomService,
+                        currentUser: currentUser,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            );
+          },
+        )
+      );
+    }
+  }
+
+
+
 
 
 
