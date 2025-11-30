@@ -113,7 +113,7 @@ List<String> dynamicTeachers = [];
       'iniviteCode' : inviteCode,
       'createdAt' : createdAt.toIso8601String(),
     };
-    
+
     factory Classroom.fromJson(Map<String, dynamic> json) {
       return Classroom(
         id: json['id'],
@@ -371,7 +371,7 @@ class ClassroomService {
         attachments: attachments,
         submittedAt: DateTime.now(),
       );
-      
+
       final assignment = _classroomAssignments.firstWhere((a) => a.id == assignmentId);
       assignment.submissions.add(submission);
 
@@ -438,78 +438,6 @@ List<Classroom> getClassroomsForUser(String userId) {
   return _classrooms.where((c) => c.teacher.id == userId || c.students.any((s) => s.id == userId)).toList();
 }
 }
-
-//3. For Notifications and Reminders
-
-
-class NotificationService {
-  static final FlutterLocalNotificationsPlugin _notifications = FlutterLocalNotificationsPlugin();
-
-  static Future<void> initialize() async {
-    const AndroidInitializationSettings androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const InitializationSettings settings = InitializationSettings(android: androidSettings);
-    await _notifications.initialize(settings);
-  }
-
-  static Future<void> scheduleAssignmentReminder(Assignment assignment) async {
-    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-      'assignment_channel',
-      'Assignment  Reminders',
-      importance: Importance.high,
-    );
-
-    const NotificationDetails details = NotificationDetails(android: androidDetails);
-
-    //Reminder 1 day before deadline
-    final remindertime = assignment.deadline.subtract(const Duration(days: 1));
-    if (remindertime.isAfter(DateTime.now())) {
-      await _notifications.show(
-        assignment.hashCode,
-        'Assignments added',
-
-    }
-  }
-
-  void startTimer() => timerStartTime = DateTime.now();
-
-  void stopTimer() {
-    if (timerStartTime != null) {
-      timeSpent = (timeSpent ?? Duration.zero) + DateTime.now().difference(timerStartTime!);
-      timerStartTime = null;
-    }
-  }
-
-  factory Assignment.fromJson(Map<String, dynamic> json) {
-    return Assignment(
-      subject: json['subject'],
-      title: json['title'],
-      description: json['description'],
-      deadline: DateTime.parse(json['deadline']),
-      submitTo: json['submitTo'],
-      status: AssignmentStatus.values[json['status'] ?? 0],
-      startDate: json['startDate'] != null ? DateTime.tryParse(json['startDate']) : null,
-      completionDate: json['completionDate'] != null ? DateTime.tryParse(json['completionDate']) : null,
-      imagePath: json['imagePath'],
-      priority: Priority.values[json['priority'] ?? 1],
-      timeSpent: json['timeSpent'] != null ? Duration(microseconds: json['timeSpent']) : null,
-    );
-  }
-
-  Map<String, dynamic> toJson() => {
-    'subject': subject,
-    'title': title,
-    'description': description,
-    'deadline': deadline.toIso8601String(),
-    'submitTo': submitTo,
-    'status': status.index,
-    'startDate': startDate?.toIso8601String(),
-    'completionDate': completionDate?.toIso8601String(),
-    'imagePath': imagePath,
-    'priority': priority.index,
-    'timeSpent': timeSpent?.inMicroseconds,
-  };
-}
-
 
 //3. For Notifications and Reminders
 
@@ -763,6 +691,21 @@ class AssignmentManager extends StatefulWidget {
 
 class _AssignmentManagerState extends State<AssignmentManager> {
   final List<Assignment> _assignments = [];
+  final ClassroomService _classroomService = ClassroomService();
+
+  final ClassroomUser _currentUser = ClassroomUser(
+    id: 'user_001',
+    name: 'Current User',
+    email: 'user@school.com',
+    role: UserRole.Teacher,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAssignments();
+    _classroomService.loadClassrooms();
+  }
 
   @override
   void initState() {
@@ -899,6 +842,132 @@ class _AssignmentManagerState extends State<AssignmentManager> {
     await _saveAssignment();
   }
 
+  void _createClassroom() async {
+    final result = await showDialog(
+      context: context,
+      builder: (context) => CreateClassroomDialog(),
+    );
+
+    if (result != null && result is Map<String, String>) {
+      final classroom = await _classroomService.createClassroom(
+        result['name']!,
+        result['subject']!,
+        result['section']!,
+        _currentUser,
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Classroom created! Invite Code: ${classroom.inviteCode}')),
+      );
+    }
+  }
+
+  void _joinClassroom() async {
+    final inviteCode = await showDialog<String>(
+      context: context,
+      builder: (context) => JoinClassroomDialog(),
+    );
+
+    if (inviteCode != null && inviteCode.isNotEmpty) {
+      final success = await _classroomService.joinClassroom(inviteCode, _currentUser);
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to join classroom. Invalid code or already joined')),
+        );
+      }
+    }
+  }
+
+  void _showClassroomList() {
+    Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => ClassroomListPage(
+          classroomService: _classroomService,
+          currentUser: _currentUser,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildClassroomSection() {
+    final userClassrooms = _classroomService.getClassroomsForUser(_currentUser.id);
+
+    return Card(
+      child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Classrooms',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+
+              if (userClassrooms.isEmpty)
+                const Text('NO Classrooms yet. Create or join one!'),
+
+              if (userClassrooms.isNotEmpty)
+                SizedBox(
+                  height: 100,
+                  child: ListView.builder(
+                    ScrollDirection: Axis.horizontal,
+                    itemCount: userClassrooms.length
+                      itemBuilder: (context, index) {
+                      final classroom = userClassrooms[index];
+                      return Container(
+    width: 200,
+    margin: const EdgeInsets.only(right: 10),
+    child:  Card(
+    color: Colors.blue[50],
+    child: ListTile(
+    title: Text(classroom.name),
+    subtitle: Text(classroom.subject),
+    trailing: classroom.teacher.id == _currentUser.id ? const Icon(Icons.school, color: Colors.orange) : const Icon(Icons.person, color: Colors.green),
+    onTap: () {
+      Navigator.push(
+      context,
+      MaterialPageRoute(
+      builder: (context) => ClassroomDetailPage(
+    classroom: classroom,
+    classroomService: _classroomService,
+    currentUser: _currentUser
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                  const SizedBox(height: 10),
+    Row(
+    children: [
+      Expanded(
+    child: ElevatedButton(
+    onPressed: _createClassroom,
+    icon: const Icon(Icons.add),
+    label: const Text('create Classroom'),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                  Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _joinClassroom,
+                    icon: const Icon(Icons.group_add),
+                    label: const Text('Join Classroom'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
 
 
   //9. Kanban Board with Drag and Drop
@@ -1102,6 +1171,11 @@ class _AssignmentManagerState extends State<AssignmentManager> {
       appBar: AppBar(
         title: const Text('Assignment Manager'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.dashboard),
+            onPressed: _showClassroomList,
+            tooltip: 'Classrooms',
+          )
           //Buttons for Dashboard
           IconButton(
             icon: const Icon(Icons.dashboard),
@@ -1165,6 +1239,9 @@ class _AssignmentManagerState extends State<AssignmentManager> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
+            _buildClassroomSection(),
+            const SizedBox(height: 20),
+
             ElevatedButton(
               onPressed: () => _addOrEditAssignment(),
               child: const Text('Add Assignment'),
@@ -1212,6 +1289,97 @@ class _AssignmentManagerState extends State<AssignmentManager> {
     );
   }
 }
+
+
+class CreateClassroomDialog extends StatefulWidget {
+    @override
+  State<CreateClassroomDialog> createState() => _CreateClassroomDialogState();
+}
+
+class _CreateClassroomDialogState extends State<CreateClassroomDialog> {
+  final _nameController = TextEditingController();
+  final _subjectController = TextEditingController();
+  final _sectionController = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Create Classroom'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _nameController,
+            decoration: const InputDecoration(labelText: 'Class Name'),
+          ),
+          TextField(
+            controller: _subjectController,
+            decoration: const InputDecoration(labelText: 'Subject'),
+          ),
+          TextField(
+            controller: _sectionController,
+            decoration: const InputDecoration(labelText: 'Section'),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(onPressed: () {
+          if (_nameController.text.isNotEmpty &&
+              _subjectController.text.isNotEmpty &&
+              _sectionController.text.isNotEmpty) {
+            Navigator.pop(context, {
+              'name': _nameController.text,
+              'subject': _subjectController,
+              'section': _sectionController,
+            });
+          }
+        },
+          child: const Text('Create'),
+        ),
+      ],
+    );
+  }
+}
+
+class JoinClassroomDialog extends StatefulWidget {
+    @override
+  State<JoinClassroomDialog> createState() => _JoinClassroomDialogState();
+}
+
+class _JoinClassroomDialogState extends State<JoinClassroomDialog> {
+    final _inviteCodeController = TextEditingController();
+
+    @override
+    Widget build(BuildContext context) {
+      return AlertDialog(
+        title: const Text('Join Classroom'),
+        content: TextField(
+          controller: _inviteCodeController,
+          decoration: const InputDecoration(
+            labelText: 'Invite Code',
+            hintText: 'e.g., ABC123',
+          ),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(onPressed: () {
+              if (_inviteCodeController.text.isNotEmpty) {
+                Navigator.pop(context, _inviteCodeController.text);
+              }
+            },
+            child:  const Text('Join'),
+          ),
+        ],
+      );
+    }
+  }
+
+
+
+
 
 
 //10. Assignment Form with Teachrs and Subjects
