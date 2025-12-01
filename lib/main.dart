@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -431,8 +432,8 @@ Future<void> loadClassroomAssignments() async {
 //Getters
 List<Classroom> get classrooms => _classrooms;
 List<ClassroomAssignment> get classroomAssignments => _classroomAssignments;
-List<ClassroomAssignment> getAssignmentsForClassroom(String userId) {
-  return _classroomAssignments.where((a) => a.classroomId == classroomId).toList();
+List<ClassroomAssignment> getAssignmentsForClassroom(String id) {
+  return _classroomAssignments.where((a) => a.classroomId == id).toList();
 }
 List<Classroom> getClassroomsForUser(String userId) {
   return _classrooms.where((c) => c.teacher.id == userId || c.students.any((s) => s.id == userId)).toList();
@@ -705,15 +706,8 @@ class _AssignmentManagerState extends State<AssignmentManager> {
     super.initState();
     _loadAssignments();
     _classroomService.loadClassrooms();
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _loadAssignments();
+    _classroomService.loadClassroomAssignments();
     NotificationService.initialize();
-
-
     widget.themeService.addListener(_onThemeChanged);
   }
 
@@ -912,8 +906,8 @@ class _AssignmentManagerState extends State<AssignmentManager> {
                 SizedBox(
                   height: 100,
                   child: ListView.builder(
-                    ScrollDirection: Axis.horizontal,
-                    itemCount: userClassrooms.length
+                    scrollDirection: Axis.horizontal,
+                    itemCount: userClassrooms.length,
                       itemBuilder: (context, index) {
                       final classroom = userClassrooms[index];
                       return Container(
@@ -947,7 +941,7 @@ class _AssignmentManagerState extends State<AssignmentManager> {
     Row(
     children: [
       Expanded(
-    child: ElevatedButton(
+    child: ElevatedButton.icon(
     onPressed: _createClassroom,
     icon: const Icon(Icons.add),
     label: const Text('create Classroom'),
@@ -1175,7 +1169,7 @@ class _AssignmentManagerState extends State<AssignmentManager> {
             icon: const Icon(Icons.dashboard),
             onPressed: _showClassroomList,
             tooltip: 'Classrooms',
-          )
+          ),
           //Buttons for Dashboard
           IconButton(
             icon: const Icon(Icons.dashboard),
@@ -1381,9 +1375,9 @@ class _JoinClassroomDialogState extends State<JoinClassroomDialog> {
   //Clasroom List Page
 class ClassroomListPage extends StatelessWidget {
     final ClassroomService classroomService;
-    final ClassroomUser currentUser,
+    final ClassroomUser currentUser;
 
-    const ClassroomListPage ({
+    const ClassroomListPage({
       super.key,
       required this.classroomService,
       required this.currentUser,
@@ -1428,7 +1422,143 @@ class ClassroomListPage extends StatelessWidget {
   }
 
 
+  //Classroom Detail Page
+class ClassroomDetailPage extends StatefulWidget {
+    final Classroom classroom;
+    final ClassroomService classroomService;
+    final ClassroomUser currentUser;
 
+    const ClassroomDetailPage ({
+      super.key,
+      required this.classroom,
+      required this.classroomService,
+      required this.currentUser,
+});
+
+    @override
+  State<ClassroomDetailPage> createState() => _ClassroomDetailPageState();
+}
+
+class _ClassroomDetailPageState extends State<ClassroomDetailPage> {
+    @override
+  Widget build(BuildContext context) {
+      final isTeacher = widget.classroom.teacher.id == widget.currentUser.id;
+      final assignments = widget.classroomService.getAssignmentsForClassroom(widget.classroom.id);
+
+      return DefaultTabController(
+          length: isTeacher ? 3:2,
+          child: Scaffold(
+            appBar: AppBar(
+              title: Text(widget.classroom.name),
+              bottom: TabBar(
+                  tabs: [
+                    const Tab(icon: Icon(Icons.assignment), text: 'Assignments'),
+                    const Tab(icon: Icon(Icons.people), text: 'People'),
+                    if (isTeacher) const Tab(icon: Icon(Icons.analytics), text: 'Grades'),
+                  ],
+                ),
+              ),
+            body: TabBarView(
+                children: [
+                  _buildAssignmentsTab(assignments, isTeacher),
+                  _buildPeopleTab(),
+                  if (isTeacher) _buildGradesTab(assignments),
+                ],
+            ),
+            floatingActionButton: isTeacher ? FloatingActionButton(onPressed: _createClassroomAssignment, child: const Icon(Icons.add),) : null,
+          ),
+      );
+    }
+
+    Widget _buildAssignmentsTab(List<ClassroomAssignment> assignments, bool isTeacher) {
+      return ListView.builder(
+        itemCount: assignments.length,
+        itemBuilder: (context, index) {
+          final assignment = assignments[index];
+          final userSubmission = assignment.submissions.firstWhere((s) => s.studentId == widget.currentUser.id, orElse: () => StudentSubmission(
+            id: '',
+            studentId: '',
+            assignmentId: assignment.id,
+            attachments: [],
+            submittedAt: DateTime.now(),
+          ));
+
+          return Card(
+            margin: const EdgeInsets.all(8.0),
+            child: ListTile(
+              title: Text(assignment.title),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(assignment.description),
+                  Text('Due: ${assignment.dueDate.toLocal().toString().split('')[0]}'),
+                  
+                  if (userSubmission.grade != null)
+                    Text('Grade: ${userSubmission.grade}/${assignment.points}'),
+
+                  if (userSubmission.submittedAt != DateTime.now())
+                    Text('Submitted; ${userSubmission.submittedAt.toLocal().toString().split('')[0]}'),
+                ],
+              ),
+              trailing: isTeacher ?  Text('${assignment.submissions.length}/${widget.classroom.students.length}') : userSubmission.grade != null
+                ? Icon(Icons.check_circle, color: Colors.green) : const Icon(Icons.pending),
+              onTap: () {
+
+              },
+            ),
+          );
+        },
+      );
+    }
+
+
+    Widget _buildPeopleTab() {
+      return ListView(
+        children: [
+          ListTile(
+            leading: const Icon(Icons.school, color: Colors.orange),
+            title: Text(widget.classroom.teacher.name),
+            subtitle: const Text('Teacher'),
+          ),
+          const Divider(),
+          ...widget.classroom.students.map((student) => ListTile(
+            leading: const Icon(Icons.person),
+            title: Text(student.name),
+            subtitle: Text(student.email),
+          )),
+        ],
+      ); 
+    }
+
+
+    Widget _buildGradesTab(List<ClassroomAssignment> assignments) {
+      return ListView.builder(
+        itemCount: assignments.length,
+        itemBuilder: (context, index) {
+          final assignment = assignments[index];
+          return Card(
+            margin: const EdgeInsets.all(8.0),
+            child: ListTile(
+              title: Text(assignment.title),
+              subtitle: Text('Submission: ${assignment.submissions.length}/${widget.classroom.students.length}'),
+              trailing: IconButton(
+                icon: const Icon(Icons.grade),
+                onPressed: () => _gradeAssignment(assignment),
+              ),
+            ),
+          );
+        },
+      );
+    }
+
+    void _createClassroomAssignment() async {
+
+    }
+
+    void _gradeAssignment(ClassroomAssignment assignment) {
+
+    }
+  }
 
 
 
