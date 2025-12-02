@@ -1494,6 +1494,35 @@ class ClassroomDetailPage extends StatefulWidget {
 }
 
 class _ClassroomDetailPageState extends State<ClassroomDetailPage> {
+    late List<ClassroomAssignment> _assignments;
+
+
+    @override
+    void iniState() {
+      super.initState();
+      WidgetsBinding.instance.addObserver(this);
+      _loadAssignments();
+    }
+
+    @override
+    void dispose() {
+      WidgetsBinding.instance.removeObserver(this);
+      super.dispose();
+    }
+
+
+    @override
+    void didChangeAppLifecycleState(AppLifecycleState state) {
+      if (state == AppLifecycleState.resumed) {
+        _loadAssignments();
+      }
+    }
+
+    void _loadAssignments() {
+      _assignments = widget.classroomService.getAssignmentsForClassroom(widget.classroom.id);
+    }
+
+
 
     @override
   Widget build(BuildContext context) {
@@ -1531,46 +1560,7 @@ class _ClassroomDetailPageState extends State<ClassroomDetailPage> {
         );
       }
 
-    Widget _buildAssignmentsTab(List<ClassroomAssignment> assignments, bool isTeacher) {
-      return ListView.builder(
-        itemCount: assignments.length,
-        itemBuilder: (context, index) {
-          final assignment = assignments[index];
-          final userSubmission = assignment.submissions.firstWhere((s) => s.studentId == widget.currentUser.id, orElse: () => StudentSubmission(
-            id: '',
-            studentId: '',
-            assignmentId: assignment.id,
-            attachments: [],
-            submittedAt: DateTime.now(),
-          ));
 
-          return Card(
-            margin: const EdgeInsets.all(8.0),
-            child: ListTile(
-              title: Text(assignment.title),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(assignment.description),
-                  Text('Due: ${assignment.dueDate.toLocal().toString().split('')[0]}'),
-                  
-                  if (userSubmission.grade != null)
-                    Text('Grade: ${userSubmission.grade}/${assignment.points}'),
-
-                  if (userSubmission.submittedAt != DateTime.now())
-                    Text('Submitted; ${userSubmission.submittedAt.toLocal().toString().split('')[0]}'),
-                ],
-              ),
-              trailing: isTeacher ?  Text('${assignment.submissions.length}/${widget.classroom.students.length}') : userSubmission.grade != null
-                ? Icon(Icons.check_circle, color: Colors.green) : const Icon(Icons.pending),
-              onTap: () {
-
-              },
-            ),
-          );
-        },
-      );
-    }
 
 
     Widget _buildPeopleTab() {
@@ -1613,7 +1603,20 @@ class _ClassroomDetailPageState extends State<ClassroomDetailPage> {
     }
 
     void _createClassroomAssignment() async {
+      final result = await Navigator.push(context,
+          MaterialPageRoute(
+              builder: (context) => ClassroomAssignmentForm(
+                classroom: widget.classroom,
+                classroomService: widget.classroomService,
+              ),
+          ),
+      );
 
+      if (result == true) {
+        setState(() {
+
+        });
+      }
     }
 
     void _gradeAssignment(ClassroomAssignment assignment) {
@@ -1893,6 +1896,202 @@ class _AssignmentFormState extends State<AssignmentForm> {
       Navigator.pop(context, assignment);
     }
   }
+}
+
+class ClassroomAssignmentForm extends StatefulWidget {
+    final Classroom classroom;
+    final ClassroomService classroomService;
+
+    const ClassroomAssignmentForm({
+      super.key,
+      required this.classroom,
+      required this.classroomService,
+});
+
+    @override
+    State<ClassroomAssignmentForm> createState() => _ClassroomAssignmentFormState();
+}
+
+class _ClassroomAssignmentFormState extends State<ClassroomAssignmentForm> {
+    final _formKey = GlobalKey<FormState>();
+    final _titleController = TextEditingController();
+    final _descriptionController = TextEditingController();
+    final _pointsController = TextEditingController();
+    DateTime? _dueDate;
+    List<String> _attachments = [];
+
+    @override
+  void dispose() {
+      _titleController.dispose();
+      _descriptionController.dispose();
+      _pointsController.dispose();
+      super.dispose();
+    }
+
+    Future<void> _pickDeadline() async {
+      final now = DateTime.now();
+      final picked = await showDatePicker(
+        context: context,
+        initialDate: _dueDate ?? now.add(const Duration(days: 7)),
+        firstDate: now,
+        lastDate: DateTime(now.year + 1),
+      );
+
+      if (picked != null) {
+        setState(() {
+          _dueDate = picked;
+        });
+      }
+    }
+
+    Future<void> _pickFiles() async {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
+        type: FileType.any,
+      );
+
+      if (result != null) {
+        setState(() {
+          _attachments.addAll(result.files.map((file) => file.name).toList());
+        });
+      }
+    }
+
+    Future<void> _save() async {
+      if (_formKey.currentState!.validate() && _dueDate != null) {
+        try {
+          await widget.classroomService.createClassroomAssignment(
+            classroomId: widget.classroom.id,
+            title: _titleController.text,
+            description: _descriptionController.text,
+            dueDate: _dueDate!,
+            points: int.tryParse(_pointsController.text) ?? 100,
+            attachments: _attachments,
+          );
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Assignment created sucessfully!')),
+          );
+          Navigator.pop(context, true);
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error creating assignments: $e')),
+          );
+        }
+      }
+    }
+
+    @override
+      Widget build(BuildContext context) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Create Classroom Assignment'),
+        ),
+        body: Padding(
+            padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
+            child: ListView(
+              children: [
+                TextFormField(
+                  controller: _titleController,
+                  decoration: const InputDecoration(
+                    labelText: 'Assignment Title',
+                    border: OutlineInputBorder(),
+                  ),
+              validator: (value) => value!.isEmpty ? 'Enter title' : null,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _descriptionController,
+              decoration: const InputDecoration(
+                labelText: 'Description',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 4,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _pointsController,
+              decoration: const InputDecoration(
+                labelText: 'Points',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.number,
+              validator: (value) {
+                if (value!.isEmpty) return 'Enter points';
+                final points = int.tryParse(value);
+                if (points == null || points <= 0) return 'Enter valid points';
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              title: Text(
+                  _dueDate == null ? ' Select Due Date' : 'Due Date: ${_dueDate!.toLocal().toString().split('')[0]}',
+              ),
+              trailing: const Icon(Icons.calendar_today),
+              onTap: _pickDeadline,
+              tileColor: Colors.grey[100],
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(0),
+                side: BorderSide(color: Colors.grey[300]!),
+              ),
+            ),
+            if (_dueDate == null)
+              Padding(
+            padding: const EdgeInsets.only(left: 16.0, top:  4),
+          child: Text(
+            'Please selecte a due date',
+            style: TextStyle(color: Colors.red[700]),
+          ),
+        ),
+      const SizedBox(height: 16),
+      if (_attachments.isNotEmpty) ...[
+        const Text(
+          'Attachments:',
+      style: TextStyle(fontWeight: FontWeight.bold),
+      ),
+      ..._attachments.map((file) => ListTile(
+      leading: const Icon(Icons.attach_file),
+      title: Text(file),
+      trailing: IconButton(
+      icon: const Icon(Icons.close, size: 18),
+      onPressed: () {
+        setState(() {
+          _attachments.remove(file);
+        });
+        },
+      ),
+      )
+      ),
+      const SizedBox(height: 16),
+      ],
+      ElevatedButton.icon(onPressed: _pickFiles,
+          icon: const Icon(Icons.attach_file),
+            label: const Text('Add Attachments'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.blue[50],
+          foregroundColor: Colors.blue[800],
+        ),
+),
+                const SizedBox(height: 24),
+                ElevatedButton(onPressed: _save,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      backgroundColor: Colors.blue[700],
+                    ),
+                  child: const Text(
+                    'Create Assignments',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 }
 
 //11. Assignment Detail with Timer
