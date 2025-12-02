@@ -12,6 +12,7 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:flutter/services.dart';
 
 
 
@@ -851,8 +852,21 @@ class _AssignmentManagerState extends State<AssignmentManager> {
       );
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Classroom created! Invite Code: ${classroom.inviteCode}')),
+        SnackBar(
+            content: Text('Classroom created! Invite Code: ${classroom.inviteCode}'),
+            duration: Duration(seconds: 5),
+          action: SnackBarAction(
+            label: 'COPY',
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: classroom.inviteCode));
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Invite code copie to clipboard!')),
+              );
+            },
+          ),
+        ),
       );
+      setState(() {});
     }
   }
 
@@ -915,6 +929,7 @@ class _AssignmentManagerState extends State<AssignmentManager> {
                     itemCount: userClassrooms.length,
                       itemBuilder: (context, index) {
                       final classroom = userClassrooms[index];
+                      final isTeacher = classroom.teacher.id == _currentUser.id;
                       return Container(
     width: 200,
     margin: const EdgeInsets.only(right: 10),
@@ -922,8 +937,9 @@ class _AssignmentManagerState extends State<AssignmentManager> {
     color: Colors.blue[50],
     child: ListTile(
     title: Text(classroom.name),
-    subtitle: Text(classroom.subject),
-    trailing: classroom.teacher.id == _currentUser.id ? const Icon(Icons.school, color: Colors.orange) : const Icon(Icons.person, color: Colors.green),
+    subtitle: Text('${classroom.subject} ${classroom.section}'),
+    trailing: isTeacher ? const Icon(Icons.school, color: Colors.orange)
+    : const Icon(Icons.person, color: Colors.green),
     onTap: () {
       Navigator.push(
       context,
@@ -936,6 +952,11 @@ class _AssignmentManagerState extends State<AssignmentManager> {
                                 ),
                               );
                             },
+      onLongPress: isTeacher ? () async {
+      await Clipboard.setData(ClipboardData(text: classroom.inviteCode));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Invite Code "${classroom.inviteCode}" copied!')),
+      );
+      } : null,
                           ),
                         ),
                       );
@@ -1407,31 +1428,52 @@ class ClassroomListPage extends StatelessWidget {
           itemCount: userClassrooms.length,
           itemBuilder: (context, index) {
             final classroom = userClassrooms[index];
+            final isTeacher = classroom.teacher.id == currentUser.id;
+            
             return Card(
               margin: const EdgeInsets.all(8.0),
               child: ListTile(
                 leading: classroom.teacher.id == currentUser.id ? const Icon(Icons.school, color: Colors.orange) : const Icon(Icons.person, color: Colors.green),
                 title: Text(classroom.name),
                 subtitle: Text('${classroom.subject} ${classroom.section}'),
-                trailing: Text('${classroom.students.length} students'),
-                onTap: () {
-                  Navigator.push(context,
-                    MaterialPageRoute(
-                      builder: (context) => ClassroomDetailPage(
-                        classroom: classroom,
-                        classroomService: classroomService,
-                        currentUser: currentUser,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('${classroom.students.length} students'),
+                    if (isTeacher) ...[
+                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: const Icon(Icons.copy, size: 18),
+                        tooltip: 'Copy Invite Code',
+                        onPressed: () async {
+                          await Clipboard.setData(ClipboardData(text: classroom.inviteCode));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Invite Code "${classroom.inviteCode}" copied!')),
+                          );
+                        },
                       ),
-                    ),
-                  );
-                },
-              ),
-            );
-          },
-        )
-      );
+                    ],
+                  ],
+                ),
+                  onTap: () {
+                  Navigator.push(
+                      context,
+                    MaterialPageRoute(
+                        builder: (context) => ClassroomDetailPage(
+                            classroom: classroom,
+                            classroomService: classroomService,
+                            currentUser: currentUser
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+          )
+        );
+      }
     }
-  }
 
 
   //Classroom Detail Page
@@ -1452,6 +1494,7 @@ class ClassroomDetailPage extends StatefulWidget {
 }
 
 class _ClassroomDetailPageState extends State<ClassroomDetailPage> {
+
     @override
   Widget build(BuildContext context) {
       final isTeacher = widget.classroom.teacher.id == widget.currentUser.id;
@@ -1462,25 +1505,31 @@ class _ClassroomDetailPageState extends State<ClassroomDetailPage> {
           child: Scaffold(
             appBar: AppBar(
               title: Text(widget.classroom.name),
-              bottom: TabBar(
-                  tabs: [
-                    const Tab(icon: Icon(Icons.assignment), text: 'Assignments'),
-                    const Tab(icon: Icon(Icons.people), text: 'People'),
-                    if (isTeacher) const Tab(icon: Icon(Icons.analytics), text: 'Grades'),
-                  ],
+            actions: [
+              if (isTeacher) 
+                IconButton(
+                  icon: const Icon(Icons.copy),
+                  tooltip: 'Copy Invite Code',
+                  onPressed: () async {
+                    await Clipboard.setData(ClipboardData(text: widget.classroom.inviteCode));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('INivte Code "${widget.classroom.inviteCode}" copied!')),
+                    );
+                  },
                 ),
-              ),
-            body: TabBarView(
-                children: [
-                  _buildAssignmentsTab(assignments, isTeacher),
-                  _buildPeopleTab(),
-                  if (isTeacher) _buildGradesTab(assignments),
                 ],
+            bottom: TabBar(
+                tabs : [
+                  const Tab(icon: Icon(Icons.assignment), text: 'Assignments'),
+                  const Tab(icon: Icon(Icons.assignment), text: 'People'),
+                  if (isTeacher) const Tab(icon: Icon(Icons.analytics), text: 'Grades'),
+                ],
+              ),
             ),
             floatingActionButton: isTeacher ? FloatingActionButton(onPressed: _createClassroomAssignment, child: const Icon(Icons.add),) : null,
           ),
-      );
-    }
+        );
+      }
 
     Widget _buildAssignmentsTab(List<ClassroomAssignment> assignments, bool isTeacher) {
       return ListView.builder(
