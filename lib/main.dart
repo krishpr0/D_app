@@ -111,7 +111,7 @@ List<String> dynamicTeachers = [];
       'section' : section,
       'teacher' : teacher.toJson(),
       'students' : students.map((s) => s.toJson()).toList(),
-      'iniviteCode' : inviteCode,
+      'inviteCode' : inviteCode,
       'createdAt' : createdAt.toIso8601String(),
     };
 
@@ -167,7 +167,7 @@ List<String> dynamicTeachers = [];
           id: json['id'],
           classroomId: json['classroomId'],
           title: json['title'],
-          description: json['descprition'],
+          description: json['description'],
           attachments: List<String>.from(json['attachments']),
           dueDate: DateTime.parse(json['dueDate']),
           points: json['points'],
@@ -213,7 +213,7 @@ List<String> dynamicTeachers = [];
         id: json['id'],
         studentId: json['studentId'],
         assignmentId: json['assignmentId'],
-        textContent: json['TextContnet'],
+        textContent: json['TextContent'],
         attachments: List<String>.from(json['attachments']),
         submittedAt: DateTime.parse(json['submittedAt']),
         grade: json['grade'],
@@ -869,6 +869,11 @@ class _AssignmentManagerState extends State<AssignmentManager> {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Failed to join classroom. Invalid code or already joined')),
         );
+        setState(() {});
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to join Classroom. Invalid code or already joined.')),
+        );
       }
     }
   }
@@ -1159,6 +1164,7 @@ class _AssignmentManagerState extends State<AssignmentManager> {
   }
 
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1166,7 +1172,7 @@ class _AssignmentManagerState extends State<AssignmentManager> {
         title: const Text('Assignment Manager'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.dashboard),
+            icon: const Icon(Icons.school),
             onPressed: _showClassroomList,
             tooltip: 'Classrooms',
           ),
@@ -1317,14 +1323,20 @@ class _CreateClassroomDialogState extends State<CreateClassroomDialog> {
         ],
       ),
       actions: [
+
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+
         TextButton(onPressed: () {
           if (_nameController.text.isNotEmpty &&
               _subjectController.text.isNotEmpty &&
               _sectionController.text.isNotEmpty) {
             Navigator.pop(context, {
               'name': _nameController.text,
-              'subject': _subjectController,
-              'section': _sectionController,
+              'subject': _subjectController.text,
+              'section': _sectionController.text,
             });
           }
         },
