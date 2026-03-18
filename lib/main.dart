@@ -1494,184 +1494,367 @@ class ClassroomDetailPage extends StatefulWidget {
 }
 
 class _ClassroomDetailPageState extends State<ClassroomDetailPage> with WidgetsBindingObserver {
-    late List<ClassroomAssignment> _assignments;
+  late List<ClassroomAssignment> _assignments;
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _loadAssignments();
+  }
 
-    @override
-    void initState() {
-      super.initState();
-      WidgetsBinding.instance.addObserver(this);
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
       _loadAssignments();
     }
+  }
 
-    @override
-    void dispose() {
-      WidgetsBinding.instance.removeObserver(this);
-      super.dispose();
-    }
-
-
-    @override
-    void didChangeAppLifecycleState(AppLifecycleState state) {
-      if (state == AppLifecycleState.resumed) {
-        _loadAssignments();
-      }
-    }
-
-    void _loadAssignments() {
+  void _loadAssignments() {
+    setState(() {
       _assignments = widget.classroomService.getAssignmentsForClassroom(widget.classroom.id);
-    }
+    });
+  }
 
-
-
-    @override
-  Widget build(BuildContext context) {
-      final isTeacher = widget.classroom.teacher.id == widget.currentUser.id;
-      final assignments = widget.classroomService.getAssignmentsForClassroom(widget.classroom.id);
-
-      return DefaultTabController(
-          length: isTeacher ? 3:2,
-          child: Scaffold(
-            appBar: AppBar(
-              title: Text(widget.classroom.name),
-            actions: [
-              if (isTeacher) 
-                IconButton(
-                  icon: const Icon(Icons.copy),
-                  tooltip: 'Copy Invite Code',
-                  onPressed: () async {
-                    await Clipboard.setData(ClipboardData(text: widget.classroom.inviteCode));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('INivte Code "${widget.classroom.inviteCode}" copied!')),
-                    );
-                  },
-                ),
-                ],
-            bottom: TabBar(
-                tabs : [
-                  const Tab(icon: Icon(Icons.assignment), text: 'Assignments'),
-                  const Tab(icon: Icon(Icons.assignment), text: 'People'),
-                  if (isTeacher) const Tab(icon: Icon(Icons.analytics), text: 'Grades'),
-                ],
-              ),
-            ),
-            floatingActionButton: isTeacher ? FloatingActionButton(onPressed: _createClassroomAssignment, child: const Icon(Icons.add),) : null,
-          ),
-        );
-      }
-
-
-
-
-    Widget _buildPeopleTab() {
-      body: TabBarView(
-        children: [
-          _buildAssignmentsTab(),
-          _buildPeopleTab(),
-          if (isTeacher) _buildGradesTab(),
-        ],
+  void _createClassroomAssignment() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ClassroomAssignmentForm(
+          classroom: widget.classroom,
+          classroomService: widget.classroomService,
+        ),
       ),
+    );
 
-      return ListView(
-        children: [
-          ListTile(
-            leading: const Icon(Icons.school, color: Colors.orange),
-            title: Text(widget.classroom.teacher.name),
-            subtitle: const Text('Teacher'),
-          ),
-          const Divider(),
-          ...widget.classroom.students.map((student) => ListTile(
-            leading: const Icon(Icons.person),
-            title: Text(student.name),
-            subtitle: Text(student.email),
-          )),
-        ],
-      ); 
+    if (result == true) {
+      _loadAssignments();
     }
+  }
 
-
-    Widget _buildGradesTab() {
-
-      final assignments = widget.classroomService.getAssignmentsForClassroom(widget.classroom.id);
-
-      if (assignments.isEmpty) {
-        return const Center(
-          child: Text('No assignments to grade yet'),
-        );
-      }
-
-
-      return ListView.builder(
-        itemCount: assignments.length,
-        itemBuilder: (context, index) {
-          final assignment = assignments[index];
-          return Card(
-            margin: const EdgeInsets.all(8.0),
-            child: ListTile(
-              title: Text(assignment.title),
-              subtitle: Text('Submission: ${assignment.submissions.length}/${widget.classroom.students.length}'),
-              trailing: IconButton(
-                icon: const Icon(Icons.grade),
-                onPressed: () => _gradeAssignment(assignment),
+  void _gradeAssignment(ClassroomAssignment assignment) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Grade: ${assignment.title}'),
+        content: Container(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Total Points: ${assignment.points}',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
-            ),
-          );
-        },
-      );
-    }
-
-    void _createClassroomAssignment() async {
-      final result = await Navigator.push(context,
-          MaterialPageRoute(
-              builder: (context) => ClassroomAssignmentForm(
-                classroom: widget.classroom,
-                classroomService: widget.classroomService,
-              ),
-          ),
-      );
-
-      if (result == true) {
-        setState(() {
-
-        });
-      }
-    }
-
-      
-      void _gradeAssignment(ClassroomAssignment assignment) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text('Grde: ${assignment.title}'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('Total Points: ${assignment.points}'),
-                const SizedBox(height: 10),
-                ...assignment.submissions.map((submission) {
-                  return ListTile(
-                    title: Text('Student ID: ${submission.studentId}'),
-                    subtitle: Text('Submitted: ${submission.submittedAt}'),
-                    trailing: submission.grade != null ? Text('Grade: ${submission.grade}') : const Text('Not graded'),
-                    
-                    onTap: () {
+              const SizedBox(height: 10),
+              const Divider(),
+              ...assignment.submissions.map((submission) {
+                // Find student name from classroom students list
+                final student = widget.classroom.students.firstWhere(
+                  (s) => s.id == submission.studentId,
+                  orElse: () => ClassroomUser(
+                    id: submission.studentId,
+                    name: 'Unknown Student',
+                    email: '',
+                    role: UserRole.Student,
+                  ),
+                );
+                
+                return Card(
+                  margin: const EdgeInsets.symmetric(vertical: 4),
+                  child: ListTile(
+                    title: Text(
+                      student.name,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Submitted: ${submission.submittedAt.toLocal().toString().split('.')[0]}'),
+                        if (submission.textContent != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              'Note: ${submission.textContent}',
+                              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                      ],
+                    ),
+                    trailing: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: submission.grade != null ? Colors.green : Colors.orange,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        submission.grade != null ? 'Grade: ${submission.grade}' : 'Not Graded',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    onTap: () async {
+                      // Close current dialog
                       Navigator.pop(context);
-                      //Add grading function over here later...
+                      
+                      // Open grade input dialog
+                      final grade = await showDialog<String>(
+                        context: context,
+                        builder: (context) {
+                          final controller = TextEditingController(
+                            text: submission.grade?.toString() ?? ''
+                          );
+                          return AlertDialog(
+                            title: Text('Grade ${student.name}'),
+                            content: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text('Assignment: ${assignment.title}'),
+                                const SizedBox(height: 10),
+                                TextField(
+                                  controller: controller,
+                                  keyboardType: TextInputType.number,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Grade',
+                                    hintText: 'Enter grade (0-100)',
+                                    border: OutlineInputBorder(),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text('Cancel'),
+                              ),
+                              ElevatedButton(
+                                onPressed: () => Navigator.pop(context, controller.text),
+                                child: const Text('Save Grade'),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+
+                      if (grade != null && grade.isNotEmpty) {
+                        // Update locally
+                        setState(() {
+                          submission.grade = double.tryParse(grade);
+                        });
+                        
+                        // Save to service
+                        await widget.classroomService.gradeSubmission(
+                          assignmentId: assignment.id,
+                          studentId: submission.studentId,
+                          grade: double.tryParse(grade) ?? 0,
+                          feedback: null,
+                        );
+
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Grade saved for ${student.name}'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        }
+                      }
                     },
-                  );
-                }).toList(),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Close'),
-              ),
+                  ),
+                );
+              }).toList(),
             ],
           ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAssignmentsTab() {
+    final assignments = widget.classroomService.getAssignmentsForClassroom(widget.classroom.id);
+    
+    if (assignments.isEmpty) {
+      return const Center(
+        child: Text('No assignments yet. Create one!'),
+      );
+    }
+
+    return ListView.builder(
+      itemCount: assignments.length,
+      itemBuilder: (context, index) {
+        final assignment = assignments[index];
+        final isTeacher = widget.classroom.teacher.id == widget.currentUser.id;
+
+        return Card(
+          margin: const EdgeInsets.all(8.0),
+          child: ListTile(
+            title: Text(assignment.title),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Due: ${assignment.dueDate.toLocal().toString().split('.')[0]}'),
+                Text('Points: ${assignment.points}'),
+                Text('Submissions: ${assignment.submissions.length}'),
+              ],
+            ),
+            trailing: isTeacher
+                ? IconButton(
+                    icon: const Icon(Icons.grade),
+                    onPressed: () => _gradeAssignment(assignment),
+                  )
+                : null,
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: Text(assignment.title),
+                  content: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('Description: ${assignment.description}'),
+                        const SizedBox(height: 10),
+                        Text('Due Date: ${assignment.dueDate.toLocal().toString().split('.')[0]}'),
+                        Text('Points: ${assignment.points}'),
+                        if (assignment.attachments.isNotEmpty) ...[
+                          const SizedBox(height: 10),
+                          const Text('Attachments:'),
+                          ...assignment.attachments.map((file) => Text('• $file')),
+                        ],
+                      ],
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Close'),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
         );
-      }
+      },
+    );
+  }
+
+  Widget _buildPeopleTab() {
+    return ListView(
+      children: [
+        ListTile(
+          leading: const Icon(Icons.school, color: Colors.orange),
+          title: Text(widget.classroom.teacher.name),
+          subtitle: const Text('Teacher'),
+        ),
+        const Divider(),
+        ...widget.classroom.students.map((student) => ListTile(
+              leading: const Icon(Icons.person),
+              title: Text(student.name),
+              subtitle: Text(student.email),
+            )),
+      ],
+    );
+  }
+
+  Widget _buildGradesTab() {
+    final assignments = widget.classroomService.getAssignmentsForClassroom(widget.classroom.id);
+    
+    if (assignments.isEmpty) {
+      return const Center(
+        child: Text('No assignments to grade'),
+      );
+    }
+
+    return ListView.builder(
+      itemCount: assignments.length,
+      itemBuilder: (context, index) {
+        final assignment = assignments[index];
+        return Card(
+          margin: const EdgeInsets.all(8.0),
+          child: ListTile(
+            title: Text(assignment.title),
+            subtitle: Text(
+                'Submissions: ${assignment.submissions.length}/${widget.classroom.students.length}'),
+            trailing: IconButton(
+              icon: const Icon(Icons.grade),
+              onPressed: () => _gradeAssignment(assignment),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isTeacher = widget.classroom.teacher.id == widget.currentUser.id;
+
+    return DefaultTabController(
+      length: isTeacher ? 3 : 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(widget.classroom.name),
+          actions: [
+            if (isTeacher)
+              IconButton(
+                icon: const Icon(Icons.copy),
+                tooltip: 'Copy Invite Code',
+                onPressed: () async {
+                  await Clipboard.setData(
+                      ClipboardData(text: widget.classroom.inviteCode));
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                          content: Text(
+                              'Invite Code "${widget.classroom.inviteCode}" copied!')),
+                    );
+                  }
+                },
+              ),
+          ],
+          bottom: TabBar(
+            tabs: [
+              const Tab(icon: Icon(Icons.assignment), text: 'Assignments'),
+              const Tab(icon: Icon(Icons.people), text: 'People'),
+              if (isTeacher) const Tab(icon: Icon(Icons.grade), text: 'Grades'),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            _buildAssignmentsTab(),
+            _buildPeopleTab(),
+            if (isTeacher) _buildGradesTab(),
+          ],
+        ),
+        floatingActionButton: isTeacher
+            ? FloatingActionButton(
+                onPressed: _createClassroomAssignment,
+                child: const Icon(Icons.add),
+              )
+            : null,
+      ),
+    );
+  }
 }
+
 
 
 
@@ -1715,7 +1898,7 @@ class _AssignmentFormState extends State<AssignmentForm> {
 
   Future<void> _pickDeadline() async {
     final now = DateTime.now();
-    final picked = await  showDatePicker(
+    final picked = await showDatePicker(
       context: context,
       initialDate: _deadline ?? now,
       firstDate: now,
@@ -1729,253 +1912,173 @@ class _AssignmentFormState extends State<AssignmentForm> {
     }
   }
 
-  Widget _buildSubjectField() {
-    return DropdownButtonFormField<String>(
-      value: _subjectController.text.isNotEmpty ? _subjectController.text : null,
-      items: getAllSubjects().map((subject) {
-        return DropdownMenuItem(value: subject, child: Text(subject));
-      }).toList(),
-      onChanged: (val) {
-        setState(() {
-          _subjectController.text = val ?? '';
-        });
-      },
-      decoration: const InputDecoration(labelText: 'Subject Name'),
-    );
-  }
-
-  Widget _buildAddSubjectButton(BuildContext context) {
-    return TextButton(
-      onPressed: () async {
-        final newSubject = await showDialog<String>(
-          context: context,
-          builder: (context) {
-            final controller = TextEditingController();
-            return AlertDialog(
-              title: const Text('Add Subject'),
-              content: TextField(
-                controller: controller,
-                decoration: const InputDecoration(labelText: 'Subject Name'),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.pop(context, controller.text),
-                  child: const Text('Add'),
-                ),
-              ],
-            );
-          },
-        );
-
-        if (newSubject != null && newSubject.trim().isNotEmpty) {
-          setState(() {
-            addSubject(newSubject.trim());
-            _subjectController.text = newSubject.trim();
-          });
-        }
-      },
-      child: const Text('Add Subject'),
-    );
-  }
-
-
-  Widget _buildTeacherField() {
-    return DropdownButtonFormField<String>(
-      value: _submitToController.text.isNotEmpty ? _submitToController.text : null,
-      items: getAllTeachers().map((teacher) {
-        return DropdownMenuItem(value: teacher, child: Text(teacher));
-      }).toList(),
-      onChanged: (val) {
-        setState(() {
-          _submitToController.text = val ?? '';
-        });
-      },
-      decoration: const InputDecoration(labelText: 'Submit To Teacher'),
-    );
-  }
-
-  Widget _buildAddTeacherButton(BuildContext context) {
-    return TextButton(
-      onPressed: () async {
-        final newTeacher = await showDialog<String>(
-          context: context,
-          builder: (context) {
-            final controller = TextEditingController();
-            return AlertDialog(
-              title: const Text('Add teacher'),
-              content: TextField(
-                controller: controller,
-                decoration: const InputDecoration(labelText: 'Teacher Name'),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Add'),
-                ),
-              ],
-            );
-          },
-        );
-
-        if (newTeacher != null && newTeacher.trim().isNotEmpty) {
-          setState(() {
-            addTeacher(newTeacher.trim());
-            _submitToController.text = newTeacher.trim();
-          });
-        }
-      },
-      child: const Text('Add Teacher'),
-    );
-  }
-
-
-
-  Widget _buildPriorityField() {
-    return DropdownButtonFormField<Priority>(
-      value: _priority,
-      items: Priority.values.map((priority) {
-        return DropdownMenuItem(
-          value: priority,
-          child: Row(
-            children: [
-              Container(
-                width: 12,
-                height: 12,
-                decoration: BoxDecoration(
-                  color: _getPriorityColor(priority),
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(priority.toString().split('.').last),
-            ],
-          ),
-        );
-      }).toList(),
-      onChanged: (val) {
-        setState(() {
-          _priority = val ?? Pr7iority.Medium;
-        });
-      },
-      decoration: const InputDecoration(labelText: 'Priority'),
-    );
-  }
-
-
-    Widget _buildAssignmentsTab() {
-
-      final assignments = widget.classroomService.getAssignmentsForClassroom(widget.classroom.id);
-
-
-      if (assignment.isEmpty) {
-        return const Center(
-          child: Text('No assignments yet. Create one!?'),
-        );
-      }
-
-      return ListView.builder(
-        itemCount: assignments.length,
-        itemBuilder: (context, index) {
-          final assignment = assignments[index];
-          final isTeacher = widget.classroom.teacher.id == widget.currentUser.id;
-
-
-          return Card(
-            margin: const EdgeInsets.all(8.0),
-            child: ListTile(
-              title: Text(assignment.title),
-              subtitle:  Column (
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Due: ${assignment.dueDate.toLocal()}'),
-                  Text('Points: ${assignment.points}'),
-                  Text('Submissions: ${assignment.submissions.length}'),
-                ],
-              ),
-              trailing: isTeacher ? IconButton(
-                icon: const Icon(Icons.grade),
-                onPressed: () => _gradeAssignment(assignment),
-              ) : null,
-
-              onTap: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: Text(assignment.title),
-                    content: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text('Description: ${assignment.description}'),
-                          const SizedBox(height: 10),
-                          Text('Due Date: ${assignment.dueDate.toLocal()}'),
-                          Text('Points: ${assignment.points}'),
-
-                          if (assignment.attachments.isNotEmpty) ...[
-                            const SizedBox(height: 10),
-                            const Text('Attachments:'),
-                            ...assignment.attachments.map((file) => Text('- $file')),
-                          ],
-                        ],
-                      ),
-                    ),
-                    actions: [
-                      TextButton(
-                        OnPressed: () => Navigator.pop(context),
-                        child: const Text('Close'),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          );
-        },
-      );
-    } 
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.assignment == null ? 'Add Assignment' : 'Edit Assignment'),
       ),
-
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: ListView(
             children: [
-              _buildSubjectField(),
-              _buildAddSubjectButton(context),
+              // Subject Dropdown
+              DropdownButtonFormField<String>(
+                value: _subjectController.text.isNotEmpty ? _subjectController.text : null,
+                items: getAllSubjects().map((subject) {
+                  return DropdownMenuItem(value: subject, child: Text(subject));
+                }).toList(),
+                onChanged: (val) {
+                  setState(() {
+                    _subjectController.text = val ?? '';
+                  });
+                },
+                decoration: const InputDecoration(labelText: 'Subject Name'),
+              ),
+              
+              // Add Subject Button
+              TextButton(
+                onPressed: () async {
+                  final newSubject = await showDialog<String>(
+                    context: context,
+                    builder: (context) {
+                      final controller = TextEditingController();
+                      return AlertDialog(
+                        title: const Text('Add Subject'),
+                        content: TextField(
+                          controller: controller,
+                          decoration: const InputDecoration(labelText: 'Subject Name'),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, controller.text),
+                            child: const Text('Add'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
 
+                  if (newSubject != null && newSubject.trim().isNotEmpty) {
+                    setState(() {
+                      addSubject(newSubject.trim());
+                      _subjectController.text = newSubject.trim();
+                    });
+                  }
+                },
+                child: const Text('Add Subject'),
+              ),
+
+              // Title Field
               TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(labelText: 'Assignment Title'),
-                validator: (value) => value!.isEmpty? 'Enter Title' : null,
+                validator: (value) => value!.isEmpty ? 'Enter Title' : null,
               ),
 
+              // Description Field
               TextFormField(
                 controller: _descriptionController,
-                decoration: const InputDecoration(labelText: 'Description (Optional but recommended)'),
+                decoration: const InputDecoration(
+                    labelText: 'Description (Optional but recommended)'),
                 maxLines: 3,
               ),
 
-              _buildTeacherField(),
-              _buildAddTeacherButton(context),
-              _buildPriorityField(),
+              // Teacher Dropdown
+              DropdownButtonFormField<String>(
+                value: _submitToController.text.isNotEmpty ? _submitToController.text : null,
+                items: getAllTeachers().map((teacher) {
+                  return DropdownMenuItem(value: teacher, child: Text(teacher));
+                }).toList(),
+                onChanged: (val) {
+                  setState(() {
+                    _submitToController.text = val ?? '';
+                  });
+                },
+                decoration: const InputDecoration(labelText: 'Submit To Teacher'),
+              ),
+
+              // Add Teacher Button
+              TextButton(
+                onPressed: () async {
+                  final newTeacher = await showDialog<String>(
+                    context: context,
+                    builder: (context) {
+                      final controller = TextEditingController();
+                      return AlertDialog(
+                        title: const Text('Add teacher'),
+                        content: TextField(
+                          controller: controller,
+                          decoration: const InputDecoration(labelText: 'Teacher Name'),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, controller.text),
+                            child: const Text('Add'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+
+                  if (newTeacher != null && newTeacher.trim().isNotEmpty) {
+                    setState(() {
+                      addTeacher(newTeacher.trim());
+                      _submitToController.text = newTeacher.trim();
+                    });
+                  }
+                },
+                child: const Text('Add Teacher'),
+              ),
+
+              // Priority Dropdown
+              DropdownButtonFormField<Priority>(
+                value: _priority,
+                items: Priority.values.map((priority) {
+                  return DropdownMenuItem(
+                    value: priority,
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: _getPriorityColor(priority),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(priority.toString().split('.').last),
+                      ],
+                    ),
+                  );
+                }).toList(),
+                onChanged: (val) {
+                  setState(() {
+                    _priority = val ?? Priority.Medium;
+                  });
+                },
+                decoration: const InputDecoration(labelText: 'Priority'),
+              ),
 
               const SizedBox(height: 10),
+              
+              // Deadline Picker
               ListTile(
                 title: Text(
-                  _deadline == null ? 'Pick Deadline' : 'Deadline: ${_deadline!.toLocal().toString().split('.')[0]}',
+                  _deadline == null
+                      ? 'Pick Deadline'
+                      : 'Deadline: ${_deadline!.toLocal().toString().split('.')[0]}',
                 ),
                 trailing: const Icon(Icons.calendar_today),
                 onTap: _pickDeadline,
@@ -1989,6 +2092,8 @@ class _AssignmentFormState extends State<AssignmentForm> {
                   ),
                 ),
               const SizedBox(height: 20),
+              
+              // Submit Button
               ElevatedButton(
                 onPressed: _save,
                 child: Text(widget.assignment == null ? 'ADD' : 'UPDATE'),
@@ -2651,7 +2756,16 @@ class _DashboardPageState extends State<DashboardPage> {
 //13. Calendar Page Feature
 
 
-  cclass _CalendarPageState extends State<CalendarPage> {
+  class CalendarPage extends StatefulWidget {
+    final List<Assignment> assignments;
+
+    const CalendarPage({super.key, required this.assignments});
+
+    @override
+    State<CalendarPage> createState() => _CalendarPageState();
+  }
+
+  class _CalendarPageState extends State<CalendarPage> {
 
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
