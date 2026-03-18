@@ -1493,12 +1493,12 @@ class ClassroomDetailPage extends StatefulWidget {
   State<ClassroomDetailPage> createState() => _ClassroomDetailPageState();
 }
 
-class _ClassroomDetailPageState extends State<ClassroomDetailPage> {
+class _ClassroomDetailPageState extends State<ClassroomDetailPage> with WidgetsBindingObserver {
     late List<ClassroomAssignment> _assignments;
 
 
     @override
-    void iniState() {
+    void initState() {
       super.initState();
       WidgetsBinding.instance.addObserver(this);
       _loadAssignments();
@@ -1564,6 +1564,14 @@ class _ClassroomDetailPageState extends State<ClassroomDetailPage> {
 
 
     Widget _buildPeopleTab() {
+      body: TabBarView(
+        children: [
+          _buildAssignmentsTab(),
+          _buildPeopleTab(),
+          if (isTeacher) _buildGradesTab(),
+        ],
+      ),
+
       return ListView(
         children: [
           ListTile(
@@ -1582,7 +1590,17 @@ class _ClassroomDetailPageState extends State<ClassroomDetailPage> {
     }
 
 
-    Widget _buildGradesTab(List<ClassroomAssignment> assignments) {
+    Widget _buildGradesTab() {
+
+      final assignments = widget.classroomService.getAssignmentsForClassroom(widget.classroom.id);
+
+      if (assignments.isEmpty) {
+        return const Center(
+          child: Text('No assignments to grade yet'),
+        );
+      }
+
+
       return ListView.builder(
         itemCount: assignments.length,
         itemBuilder: (context, index) {
@@ -1619,11 +1637,41 @@ class _ClassroomDetailPageState extends State<ClassroomDetailPage> {
       }
     }
 
-    void _gradeAssignment(ClassroomAssignment assignment) {
-
-    }
-  }
-
+      
+      void _gradeAssignment(ClassroomAssignment assignment) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text('Grde: ${assignment.title}'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Total Points: ${assignment.points}'),
+                const SizedBox(height: 10),
+                ...assignment.submissions.map((submission) {
+                  return ListTile(
+                    title: Text('Student ID: ${submission.studentId}'),
+                    subtitle: Text('Submitted: ${submission.submittedAt}'),
+                    trailing: submission.grade != null ? Text('Grade: ${submission.grade}') : const Text('Not graded'),
+                    
+                    onTap: () {
+                      Navigator.pop(context);
+                      //Add grading function over here later...
+                    },
+                  );
+                }).toList(),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Close'),
+              ),
+            ],
+          ),
+        );
+      }
+}
 
 
 
@@ -1810,12 +1858,87 @@ class _AssignmentFormState extends State<AssignmentForm> {
       }).toList(),
       onChanged: (val) {
         setState(() {
-          _priority = val ?? Priority.Medium;
+          _priority = val ?? Pr7iority.Medium;
         });
       },
       decoration: const InputDecoration(labelText: 'Priority'),
     );
   }
+
+
+    Widget _buildAssignmentsTab() {
+
+      final assignments = widget.classroomService.getAssignmentsForClassroom(widget.classroom.id);
+
+
+      if (assignment.isEmpty) {
+        return const Center(
+          child: Text('No assignments yet. Create one!?'),
+        );
+      }
+
+      return ListView.builder(
+        itemCount: assignments.length,
+        itemBuilder: (context, index) {
+          final assignment = assignments[index];
+          final isTeacher = widget.classroom.teacher.id == widget.currentUser.id;
+
+
+          return Card(
+            margin: const EdgeInsets.all(8.0),
+            child: ListTile(
+              title: Text(assignment.title),
+              subtitle:  Column (
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Due: ${assignment.dueDate.toLocal()}'),
+                  Text('Points: ${assignment.points}'),
+                  Text('Submissions: ${assignment.submissions.length}'),
+                ],
+              ),
+              trailing: isTeacher ? IconButton(
+                icon: const Icon(Icons.grade),
+                onPressed: () => _gradeAssignment(assignment),
+              ) : null,
+
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: Text(assignment.title),
+                    content: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('Description: ${assignment.description}'),
+                          const SizedBox(height: 10),
+                          Text('Due Date: ${assignment.dueDate.toLocal()}'),
+                          Text('Points: ${assignment.points}'),
+
+                          if (assignment.attachments.isNotEmpty) ...[
+                            const SizedBox(height: 10),
+                            const Text('Attachments:'),
+                            ...assignment.attachments.map((file) => Text('- $file')),
+                          ],
+                        ],
+                      ),
+                    ),
+                    actions: [
+                      TextButton(
+                        OnPressed: () => Navigator.pop(context),
+                        child: const Text('Close'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          );
+        },
+      );
+    } 
+
 
   @override
   Widget build(BuildContext context) {
@@ -2526,16 +2649,10 @@ class _DashboardPageState extends State<DashboardPage> {
 
 
 //13. Calendar Page Feature
-class CalendarPage extends StatefulWidget {
-  final List<Assignment> assignments;
 
-  const CalendarPage({super.key, required this.assignments});
 
-  @override
-  State<CalendarPage> createState() => _CalendarPageState();
-}
+  cclass _CalendarPageState extends State<CalendarPage> {
 
-class _CalendarPageState extends State<CalendarPage> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   late Map<DateTime, List<Assignment>> _assignmentsByDay;
@@ -2544,54 +2661,56 @@ class _CalendarPageState extends State<CalendarPage> {
   void initState() {
     super.initState();
     _assignmentsByDay = _getAssignmentsByDay();
-    print('Calendar initialized with ${widget.assignments.length} assignments');
-    print('Mapped to ${_assignmentsByDay.length} days');
   }
 
-    Map<DateTime, List<Assignment>> _getAssignmentsByDay() {
+  Map<DateTime, List<Assignment>> _getAssignmentsByDay() {
     final Map<DateTime, List<Assignment>> assignmentsMap = {};
 
     for (var assignment in widget.assignments) {
       final day = DateTime(
         assignment.deadline.year,
         assignment.deadline.month,
-        assignment.deadline.day
+        assignment.deadline.day,
       );
 
       if (!assignmentsMap.containsKey(day)) {
         assignmentsMap[day] = [];
       }
       assignmentsMap[day]!.add(assignment);
-      }
-    return assignmentsMap;
     }
+    return assignmentsMap;
+  }
 
-    List<Assignment> _getAssignmentsForDay(DateTime day) {
+  List<Assignment> _getAssignmentsForDay(DateTime day) {
     final normalizedDay = DateTime(day.year, day.month, day.day);
     final assignments = _assignmentsByDay[normalizedDay] ?? [];
     return assignments;
-    }
+  }
 
-    @override
-    Widget build(BuildContext context) {
-    final assignmentsForSelectedDay = _selectedDay != null ? _getAssignmentsForDay(_selectedDay!) : [];
+  @override
+  Widget build(BuildContext context) {
+    final assignmentsForSelectedDay = _selectedDay != null
+        ? _getAssignmentsForDay(_selectedDay!)
+        : [];
+
     return Scaffold(
       appBar: AppBar(title: const Text('Calendar View')),
       body: Column(
         children: [
           TableCalendar(
-              focusedDay: _focusedDay,
-              firstDay: DateTime.now().subtract(const Duration(days: 365)),
-              lastDay: DateTime.now().add(const Duration(days: 365)),
+            focusedDay: _focusedDay,
+            firstDay: DateTime.now().subtract(const Duration(days: 365)),
+            lastDay: DateTime.now().add(const Duration(days: 365)),
             eventLoader: (day) => _getAssignmentsForDay(day),
             onDaySelected: (selectedDay, focusedDay) {
-                setState(() {
-                  _selectedDay = selectedDay;
-                  _focusedDay = focusedDay;
-                });
-                print('Selected Day: $selectedDay, Assignment: ${_getAssignmentsForDay(selectedDay).length}');
+              setState(() {
+                _selectedDay = selectedDay;
+                _focusedDay = focusedDay;
+              });
             },
-              selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+
+
+            selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
             calendarBuilders: CalendarBuilders(
               markerBuilder: (context, day, events) {
                 final assignmentsForDay = _getAssignmentsForDay(day);
@@ -2619,34 +2738,54 @@ class _CalendarPageState extends State<CalendarPage> {
                 return null;
               },
 
+
               defaultBuilder: (context, day, focusedDay) {
                 final assignmentsForDay = _getAssignmentsForDay(day);
                 final isToday = isSameDay(day, DateTime.now());
                 return Container(
                   margin: const EdgeInsets.all(4.0),
                   decoration: BoxDecoration(
-                    color: assignmentsForDay.isNotEmpty ? Colors.red.withOpacity(0.3) : isToday ? Colors.blue.withOpacity(0.3) : null,
+                    color: assignmentsForDay.isNotEmpty
+                        ? Colors.red.withOpacity(0.3)
+                        : isToday
+                            ? Colors.blue.withOpacity(0.3)
+                            : null,
                     shape: BoxShape.circle,
-                    border: Border.all(color: assignmentsForDay.isNotEmpty ? Colors.red : isToday ? Colors.blue : Colors.transparent,),
+                    border: Border.all(
+                      color: assignmentsForDay.isNotEmpty
+                          ? Colors.red
+                          : isToday
+                              ? Colors.blue
+                              : Colors.transparent,
+                    ),
                   ),
                   child: Center(
                     child: Text(
                       '${day.day}',
                       style: TextStyle(
-                        fontWeight: assignmentsForDay.isNotEmpty ? FontWeight.bold : FontWeight.normal,
-                        color: assignmentsForDay.isNotEmpty ? Colors.red : isToday ? Colors.blue : null,
+                        fontWeight: assignmentsForDay.isNotEmpty
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                        color: assignmentsForDay.isNotEmpty
+                            ? Colors.red
+                            : isToday
+                                ? Colors.blue
+                                : null,
                       ),
                     ),
                   ),
                 );
               },
 
+
               selectedBuilder: (context, day, focusedDay) {
                 final assignmentsForDay = _getAssignmentsForDay(day);
                 return Container(
                   margin: const EdgeInsets.all(4.0),
                   decoration: BoxDecoration(
-                    color: assignmentsForDay.isNotEmpty ? Colors.red : Theme.of(context).primaryColor,
+                    color: assignmentsForDay.isNotEmpty
+                        ? Colors.red
+                        : Theme.of(context).primaryColor,
                     shape: BoxShape.circle,
                   ),
                   child: Center(
@@ -2663,69 +2802,68 @@ class _CalendarPageState extends State<CalendarPage> {
             ),
           ),
 
+
           const SizedBox(height: 16),
           if (_selectedDay != null) ...[
             Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Text (
-                'Assignments due on ${_selectedDay!.toLocal().toString().split('')[0]} (${assignmentsForSelectedDay.length} found)',
+              child: Text(
+                'Assignments due on ${_selectedDay!.toLocal().toString().split(' ')[0]} (${assignmentsForSelectedDay.length} found)',
                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
             Expanded(
-              child: assignmentsForSelectedDay.isEmpty ? const Center(
-                child: Text(
-                  'No assignments due on this day',
-                  style: TextStyle(fontSize: 16, color: Colors.grey),
-                ),
-              )
-
+              child: assignmentsForSelectedDay.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'No assignments due on this day',
+                        style: TextStyle(fontSize: 16, color: Colors.grey),
+                      ),
+                    )
                   : ListView.builder(
-                itemCount: assignmentsForSelectedDay.length,
-                itemBuilder: (context, index) {
-                  final assignment = assignmentsForSelectedDay[index];
-                  return Card(
-                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: ListTile(
-                      leading: Container(
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: _getPriorityColor(assignment.priority),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      title: Text(
-                        assignment.title,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 4),
-                          Text('Subject: ${assignment.subject}'),
-                          const SizedBox(height: 2),
-                          Text('Status: ${assignment.status.toString().split('.').last}'),
-                          const SizedBox(height: 2),
-                          Text(
-                            'Priority: ${assignment.priority.toString().split('.').last}',
-                            style: TextStyle(
-                              color: _getPriorityColor(assignment.priority),
-                              fontWeight: FontWeight.bold,
+                      itemCount: assignmentsForSelectedDay.length,
+                      itemBuilder: (context, index) {
+                        final assignment = assignmentsForSelectedDay[index];
+                        return Card(
+                          margin: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          child: ListTile(
+                            leading: Container(
+                              width: 12,
+                              height: 12,
+                              decoration: BoxDecoration(
+                                color: _getPriorityColor(assignment.priority),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            title: Text(
+                              assignment.title,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const SizedBox(height: 4),
+                                Text('Subject: ${assignment.subject}'),
+                                const SizedBox(height: 2),
+                                Text('Status: ${assignment.status.toString().split('.').last}'),
+                                const SizedBox(height: 2),
+                                Text('Priority: ${assignment.priority.toString().split('.').last}',
+                                  style: TextStyle(color: _getPriorityColor(assignment.priority),
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ],
-                      ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
             ),
-          ] else ... [
+          ] else ...[
             const Expanded(
               child: Center(
                 child: Text(
