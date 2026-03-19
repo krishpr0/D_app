@@ -13,6 +13,10 @@ import 'package:file_picker/file_picker.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import 'services/auth_service.dart';
+import 'screens/login_screen.dart';
+import 'screens/signup_screen.dart';
 
 
 
@@ -644,8 +648,38 @@ Color _getPriorityColor(Priority priority) {
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
+
+
   @override
-  State<MyApp> createState() => _MyAppState();
+  Widget build(BuildContext context) {
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthSerivce()),
+        ChangeNotifierProvider(create: (_) => ThemeService()),
+      ],
+
+      child: Consumer<ThemeService>(
+        builder: (context, themeService, child) {
+          return MaterialApp(
+            title: 'Assignment Manager',
+            theme: ThemeData.light(),
+            darkTheme: ThemeData.dark(),
+            themeMode: themeService.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+            initialRoute: '/',
+            routes: {
+              '/': (context) => const AuthWrapper(),
+              '/login': (context) => const LoginScreen(),
+              '/signup': (context) => const SignUpScreen(),
+              '/home': (context) => AssignmentManager(
+                themeService: Provider.of<ThemeService>(context, listen: false),
+              ),
+            },
+            debugShowCheckedModeBanner: false,
+          );
+        },
+      ),
+    );
+  }
 }
 
 class _MyAppState extends State<MyApp> {
@@ -3121,7 +3155,7 @@ class AnalyticsPage extends StatelessWidget {
       ),
     );
   }
-}
+} 
 
 
 
