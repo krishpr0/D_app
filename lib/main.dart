@@ -713,6 +713,25 @@ class _MyAppState extends State<MyApp> {
 }
 
 
+class AuthWrapper extends StatelessWidget {
+  const AuthWrapper({super.key});
+
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumner<AuthService>(
+      builder: (context, authService, child) {
+        if (authService.isAuthenticated) {
+          return AssignmentManager(
+            themeService: Provider.of<ThemeService>(context),
+          );
+        } else {
+          return const LoginScreen();
+        }
+      },
+    );
+  }
+}
 
 //8. Core part of the Assingment manager
 
