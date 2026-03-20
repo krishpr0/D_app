@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -21,12 +22,17 @@ import 'services/auth_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  if (!Platform.isWindows && !Platform.isLinux && !Platform.isMacOS) {
-    await Firebase.initializeApp();
-  } else {
-    print(" Firebase Skipped on desktop platform");
+ //Initialize firebase only on platfomr where it acually works
+  try {
+    if (kIsWeb || Platform.isAndroid || Platform.isIOS) {
+      await Firebase.initializeApp();
+      print("Firebase initiazlied succes");
+    } else {
+      print("Firebase skipped - runnoing on (${Platform.operatingSystem}");
+    }
+  } catch (e) {
+    print("Firebase init falied: $e");
   }
-
   runApp(const MyApp());
 }
 
@@ -652,67 +658,44 @@ Color _getPriorityColor(Priority priority) {
 //7. Main Part with Theme Support
 
 class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+    const MyApp({super.key});
 
- @override
+    @override
   State<MyApp> createState() => _MyAppState();
 }
-
-  @override
-  Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => AuthService()),
-        ChangeNotifierProvider(create: (_) => ThemeService()),
-      ],
-
-      child: Consumer<ThemeService>(
-        builder: (context, themeService, child) {
-          return MaterialApp(
-            title: 'Assignment Manager',
-            theme: ThemeData.light(),
-            darkTheme: ThemeData.dark(),
-            themeMode: themeService.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-            initialRoute: '/',
-            routes: {
-              '/': (context) => const AuthWrapper(),
-              '/login': (context) => const LoginScreen(),
-              '/signup': (context) => const SignupScreen(),
-              '/home': (context) => AssignmentManager(
-                themeService: Provider.of<ThemeService>(context, listen: false),
-              ),
-            },
-            debugShowCheckedModeBanner: false,
-          );
-        },
-      ),
-    );
-  }
 
 
 class _MyAppState extends State<MyApp> {
 
+
     @override
-      Widget build(BuildContext context) {
-      return Consumer<ThemeService>(
-        builder: (context, themeService, child) {
-              return MaterialApp(
+    Widget build(BuildContext context) {
+      return MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => AuthService()),
+          ChangeNotifierProvider(create: (_) => ThemeService()),
+        ],
+
+        child: Consumer<ThemeService>(
+          builder: (context, themeService, child) {
+            return MaterialApp(
               title: 'Assignment Manager',
               theme: ThemeData.light(),
               darkTheme: ThemeData.dark(),
-              themeMode: themeService.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+              themeMode: themeService.isDarkMode ? ThemeMode.dark: ThemeMode.light,
               initialRoute: '/',
               routes: {
                 '/': (context) => const AuthWrapper(),
                 '/login': (context) => const LoginScreen(),
                 '/signup': (context) => const SignupScreen(),
                 '/home': (context) => AssignmentManager(
-          themeService: themeService,
-          ),
+                  themeService: themeService,
+                ),
+              },
+              debugShowCheckedModeBanner: false,
+            );
           },
-            debugShowCheckedModeBanner: false,
-          );
-        },
+        ),
       );
     }
 }

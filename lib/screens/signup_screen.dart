@@ -37,9 +37,9 @@ class _SignupScreenState extends State<SignupScreen> {
                 final authService = Provider.of<AuthService>(context, listen: false);
 
                 bool success = await authService.signUpWithEmail(
-                    _emailController.text.trim(),
-                    _passwordController.text.trim(),
-                    _nameController.text.trim(),
+                   email: _emailController.text.trim(),
+                   password: _passwordController.text.trim(),
+                   name: _nameController.text.trim(),
                 );
 
                 if (success && mounted) {

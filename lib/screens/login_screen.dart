@@ -35,8 +35,8 @@ class _LoginScreenState extends State<LoginScreen> {
             final authService = Provider.of<AuthService>(context, listen: false);
 
             bool success = await authService.signInWithEmail(
-                _emailController.text.trim(),
-                _passwordController.text.trim(),
+               email: _emailController.text.trim(),
+               password: _passwordController.text.trim(),
             );
 
 
