@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
-import 'sigup_screen.dart';
+import 'signup_screen.dart';
 
 
 class LoginScreen extends StatefulWidget {
@@ -51,20 +51,20 @@ class _LoginScreenState extends State<LoginScreen> {
     @override
     Widget build(BuildContext context) {
         return Scaffold(
-            body: Consumner<AuthService>(
+            body: Consumer<AuthService>(
                 builder: (context, authService, child) {
                     return Container(
-                        decoration: const BoxDecoration(
-                            gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [Colors.blue[400]!, Colors.purple[400]!],
-                            ),
-                        ),
+                       decoration: BoxDecoration(
+                           gradient: LinearGradient(
+                               begin: Alignment.topLeft,
+                               end: Alignment.bottomRight,
+                               colors: [Colors.blue.shade400!, Colors.purple.shade400!],
+                           ),
+                       ),
 
                         child: SafeArea(
                             child: Center(
-                                child: SingleChilScrollView(
+                                child: SingleChildScrollView(
                                     padding: const EdgeInsets.all(24.0),
                                     child: Card(
                                         elevation: 8,
@@ -188,12 +188,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
                                                                     onPressed: () {
                                                                         setState(() {
-                                                                            _obscurePassword = !_obscurePasword;
+                                                                            _obscurePassword = !_obscurePassword;
                                                                         });
                                                                     },
                                                                 ),
                                                                 
-                                                                border:  OutlineInputDecoration(
+                                                               border: OutlineInputBorder(
                                                                     borderRadius: BorderRadius.circular(12),
                                                                 ),
                                                             ),
@@ -232,7 +232,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                                             child: ElevatedButton(
                                                                 onPressed: authService.isLoading ? null : _handleLogin,
                                                                 style: ElevatedButton.styleFrom(
-                                                                    backgroundColor: Colors.bluee[700],
+                                                                    backgroundColor: Colors.blue[700],
                                                                     foregroundColor: Colors.white,
                                                                     shape: RoundedRectangleBorder(
                                                                         borderRadius: BorderRadius.circular(12),
@@ -300,4 +300,4 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
         );
     }
-}
+} 

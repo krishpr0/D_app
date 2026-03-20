@@ -36,8 +36,8 @@ class AuthService extends ChangeNotifier {
             UserCredential userCredential = await _auth.createUserWithEmailAndPassword(email: email, password: password);
 
             //Updates the profile with the display name
-            await result.user?.updateDisplayName(name);
-            await result.user?.reload();
+            await userCredential.user?.updateDisplayName(name);
+            await userCredential.user?.reload();
 
 
             _isLoading = false;

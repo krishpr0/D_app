@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'auth_service.dart';
+import '../services/auth_service.dart';
 
 
-class SignUpScreen extends StatefulWidget {
-    const SignUpScreen({super.key});
+class SignupScreen extends StatefulWidget {
+    const SignupScreen({super.key});
 
 
     @override 
-    State<SignUpScreen> createState() => _SignUpScreenState();
+    State<SignupScreen> createState() => _SignupScreenState();
 }
 
 
-class _SignUpScreenState extends State<SignUpScreen> {
+class _SignupScreenState extends State<SignupScreen> {
     final _formKey = GlobalKey<FormState>();
     final _nameController = TextEditingController();
     final _emailController = TextEditingController();
@@ -29,9 +29,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
         _passwordController.dispose();
         _confirmPasswordController.dispose();
         super.dispose();
+    }
 
 
-        Future<void> _signUp() async {
+        Future<void> _handleSignup() async {
             if (_formKey.currentState!.validate()) {
                 final authService = Provider.of<AuthService>(context, listen: false);
 
@@ -104,7 +105,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                                                 const SizedBox(height: 24),
 
                                                                 //Error mESSage
-                                                                if (autService.errorMessage != null) ...[
+                                                                if (authService.errorMessage != null) ...[
                                                                     Container(
                                                                         padding: const EdgeInsets.all(12),
                                                                         decoration: BoxDecoration(
@@ -132,7 +133,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                                                 //Name field
                                                                 TextFormField(
                                                                     controller: _nameController,
-                                                                    decoration: const InputDecoration(
+                                                                    decoration:  InputDecoration(
                                                                         labelText: 'Full name',
                                                                         prefixIcon: const Icon(Icons.person),
                                                                         border: OutlineInputBorder(
@@ -154,7 +155,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                                                 TextFormField(
                                                                     controller: _emailController,
                                                                     keyboardType: TextInputType.emailAddress,
-                                                                    decoration: const InputDecoration(
+                                                                    decoration:  InputDecoration(
                                                                         labelText: 'Email',
                                                                         prefixIcon: const Icon(Icons.email),
                                                                         border: OutlineInputBorder(
@@ -255,7 +256,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                                                     width: double.infinity,
                                                                     height: 50,
                                                                     child: ElevatedButton(
-                                                                        onPressed: authService.isLoading ? null : _handleSignUp,
+                                                                        onPressed: authService.isLoading ? null : _handleSignup,
                                                                         style: ElevatedButton.styleFrom(
                                                                             backgroundColor: Colors.blue[700],
                                                                             foregroundColor: Colors.white,
@@ -264,7 +265,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                                                             ),
                                                                         ),
 
-                                                                        child: authService.isLoading ? const Sizedbox(
+                                                                        child: authService.isLoading ? const SizedBox(
                                                                             width: 24,
                                                                             height: 24,
                                                                             child: CircularProgressIndicator(
@@ -289,6 +290,5 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     },
                 ),
             );
-        }   
+        }
     }
-}

@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:ffi';
 import 'dart:io';
 import 'dart:async';
 import 'dart:math';
@@ -13,14 +12,21 @@ import 'package:file_picker/file_picker.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
-import 'services/auth_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/signup_screen.dart';
+import 'services/auth_service.dart';
 
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
 
+  if (!Platform.isWindows && !Platform.isLinux && !Platform.isMacOS) {
+    await Firebase.initializeApp();
+  } else {
+    print(" Firebase Skipped on desktop platform");
+  }
 
-void main() {
   runApp(const MyApp());
 }
 
@@ -218,7 +224,7 @@ List<String> dynamicTeachers = [];
         id: json['id'],
         studentId: json['studentId'],
         assignmentId: json['assignmentId'],
-        textContent: json['TextContent'],
+        textContent: json['textContent'],
         attachments: List<String>.from(json['attachments']),
         submittedAt: DateTime.parse(json['submittedAt']),
         grade: json['grade'],
@@ -472,7 +478,7 @@ class NotificationService {
       await _notifications.show(
         assignment.hashCode,
         'Assignments added',
-        '${assignment.title} is due on ${assignment.deadline.toLocal().toString().split('')[0]}',
+        '${assignment.title} is due on ${assignment.deadline.toLocal().toString().substring(0, 10)[0]}',
         details,
       );
     }
@@ -547,7 +553,7 @@ class ExportService {
       final line = lines[i].trim();
       if (line.isEmpty) continue;
 
-      final values = line.split('.');
+      final values = line.split(',');
       if (values.length >= 6) {
         assignments.add(Assignment(
           subject: values[0],
@@ -648,13 +654,15 @@ Color _getPriorityColor(Priority priority) {
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
-
+ @override
+  State<MyApp> createState() => _MyAppState();
+}
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthSerivce()),
+        ChangeNotifierProvider(create: (_) => AuthService()),
         ChangeNotifierProvider(create: (_) => ThemeService()),
       ],
 
@@ -669,7 +677,7 @@ class MyApp extends StatefulWidget {
             routes: {
               '/': (context) => const AuthWrapper(),
               '/login': (context) => const LoginScreen(),
-              '/signup': (context) => const SignUpScreen(),
+              '/signup': (context) => const SignupScreen(),
               '/home': (context) => AssignmentManager(
                 themeService: Provider.of<ThemeService>(context, listen: false),
               ),
@@ -680,36 +688,33 @@ class MyApp extends StatefulWidget {
       ),
     );
   }
-}
+
 
 class _MyAppState extends State<MyApp> {
-  final ThemeService _themeService = ThemeService();
 
-  @override
-  void initState() {
-    super.initState();
-    _themeService.addListener(() {
-      setState(() {});
-    });
-  }
-
-  @override
-  void dispose() {
-    _themeService.removeListener(() {});
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext content) {
-    return MaterialApp(
-      title: 'Assignment Manager',
-      theme: ThemeData.light(),
-      darkTheme: ThemeData.dark(),
-      themeMode: _themeService.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-      home: AssignmentManager(themeService: _themeService),
-      debugShowCheckedModeBanner: false,
-    );
-  }
+    @override
+      Widget build(BuildContext context) {
+      return Consumer<ThemeService>(
+        builder: (context, themeService, child) {
+              return MaterialApp(
+              title: 'Assignment Manager',
+              theme: ThemeData.light(),
+              darkTheme: ThemeData.dark(),
+              themeMode: themeService.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+              initialRoute: '/',
+              routes: {
+                '/': (context) => const AuthWrapper(),
+                '/login': (context) => const LoginScreen(),
+                '/signup': (context) => const SignupScreen(),
+                '/home': (context) => AssignmentManager(
+          themeService: themeService,
+          ),
+          },
+            debugShowCheckedModeBanner: false,
+          );
+        },
+      );
+    }
 }
 
 
@@ -719,7 +724,7 @@ class AuthWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumner<AuthService>(
+    return Consumer<AuthService>(
       builder: (context, authService, child) {
         if (authService.isAuthenticated) {
           return AssignmentManager(
@@ -1068,19 +1073,22 @@ class _AssignmentManagerState extends State<AssignmentManager> {
                       child: Container(
                         margin: const EdgeInsets.symmetric(horizontal: 8),
                     child: DragTarget<Assignment>(
-                      onWillAccept: (assignment) {
-                       if (assignment == null) return false;
+                        onWillAccept: (assignment) {
+                          if (assignment == null) return false;
+                          if (status == AssignmentStatus.Todo) {
+                            return assignment.status == AssignmentStatus.InProgress;
+                          }
 
-                       if (status == AssignmentStatus.Completed) {
-                         return assignment.status == AssignmentStatus.Todo ||
-                             assignment.status == AssignmentStatus.InProgress;
-                       }
-                       if (status == AssignmentStatus.InProgress && assignment.status == AssignmentStatus.Todo) return true;
-                       if (status == AssignmentStatus.Completed && assignment.status == AssignmentStatus.InProgress) return true;
-                       if (status == AssignmentStatus.Todo && assignment.status == AssignmentStatus.InProgress) return true;
-                       if (status == AssignmentStatus.InProgress && assignment.status == AssignmentStatus.Completed) return true;
-                       return false;
-                },
+                          if (status == AssignmentStatus.InProgress) {
+                            return assignment.status == AssignmentStatus.Todo;
+                          }
+
+                          if (status == AssignmentStatus.Completed) {
+                            return assignment.status == AssignmentStatus.InProgress;
+                          }
+
+                          return false;
+                        },
 
                       onAccept: (assignment) {
                         setState(() {
@@ -1482,7 +1490,7 @@ class ClassroomListPage extends StatelessWidget {
           itemBuilder: (context, index) {
             final classroom = userClassrooms[index];
             final isTeacher = classroom.teacher.id == currentUser.id;
-            
+
             return Card(
               margin: const EdgeInsets.all(8.0),
               child: ListTile(
@@ -1617,7 +1625,7 @@ class _ClassroomDetailPageState extends State<ClassroomDetailPage> with WidgetsB
                     role: UserRole.Student,
                   ),
                 );
-                
+
                 return Card(
                   margin: const EdgeInsets.symmetric(vertical: 4),
                   child: ListTile(
@@ -1658,7 +1666,7 @@ class _ClassroomDetailPageState extends State<ClassroomDetailPage> with WidgetsB
                     onTap: () async {
                       // Close current dialog
                       Navigator.pop(context);
-                      
+
                       // Open grade input dialog
                       final grade = await showDialog<String>(
                         context: context,
@@ -1703,7 +1711,7 @@ class _ClassroomDetailPageState extends State<ClassroomDetailPage> with WidgetsB
                         setState(() {
                           submission.grade = double.tryParse(grade);
                         });
-                        
+
                         // Save to service
                         await widget.classroomService.gradeSubmission(
                           assignmentId: assignment.id,
@@ -1740,7 +1748,7 @@ class _ClassroomDetailPageState extends State<ClassroomDetailPage> with WidgetsB
 
   Widget _buildAssignmentsTab() {
     final assignments = widget.classroomService.getAssignmentsForClassroom(widget.classroom.id);
-    
+
     if (assignments.isEmpty) {
       return const Center(
         child: Text('No assignments yet. Create one!'),
@@ -1828,7 +1836,7 @@ class _ClassroomDetailPageState extends State<ClassroomDetailPage> with WidgetsB
 
   Widget _buildGradesTab() {
     final assignments = widget.classroomService.getAssignmentsForClassroom(widget.classroom.id);
-    
+
     if (assignments.isEmpty) {
       return const Center(
         child: Text('No assignments to grade'),
@@ -1990,7 +1998,7 @@ class _AssignmentFormState extends State<AssignmentForm> {
                 },
                 decoration: const InputDecoration(labelText: 'Subject Name'),
               ),
-              
+
               // Add Subject Button
               TextButton(
                 onPressed: () async {
@@ -2125,7 +2133,7 @@ class _AssignmentFormState extends State<AssignmentForm> {
               ),
 
               const SizedBox(height: 10),
-              
+
               // Deadline Picker
               ListTile(
                 title: Text(
@@ -2145,7 +2153,7 @@ class _AssignmentFormState extends State<AssignmentForm> {
                   ),
                 ),
               const SizedBox(height: 20),
-              
+
               // Submit Button
               ElevatedButton(
                 onPressed: _save,
@@ -2413,10 +2421,14 @@ class _AssignmentDetailState extends State<AssignmentDetail> {
 
   void _startTimerUpdates() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_assignment.timerStartTime != null) {
-        setState(() {
+      if (_assignment.timerStartTime != null && mounted) {
+        Text(
+          'Current Session: ${_formatDuration(DateTime.now().difference(_assignment.timerStartTime!))}',
+          style: const TextStyle(fontSize: 14, color: Colors.green),
+        );
+      setState(() {
 
-        });
+      });
       } else {
         _timer?.cancel();
       }
@@ -2538,7 +2550,7 @@ class _AssignmentDetailState extends State<AssignmentDetail> {
             ListTile(title: const Text('Subject'), subtitle: Text(_assignment.subject)),
             ListTile(title: const Text('Title'), subtitle: Text(_assignment.title)),
             ListTile(title: const Text('Description'), subtitle: Text(_assignment.description)),
-            ListTile(title: const Text('Deadline'), subtitle: Text(_assignment.deadline.toLocal().toString().split('')[0])),
+            ListTile(title: const Text('Deadline'), subtitle: Text(_assignment.deadline.toLocal().toString().split(' ')[0])),
             ListTile(title: const Text('Submiyt To'), subtitle: Text(_assignment.submitTo)),
             ListTile(title: const Text('Priority'), subtitle: Row(
               children: [
@@ -3174,9 +3186,8 @@ class AnalyticsPage extends StatelessWidget {
       ),
     );
   }
-} 
+}
 
 
 
 
-  
