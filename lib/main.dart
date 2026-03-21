@@ -1191,7 +1191,7 @@ class _AssignmentManagerState extends State<AssignmentManager> {
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   subtitle: Text(
-                                    assignment.subject,
+                                    '${assignment.subject} . Due: ${_formatDateTime(assignment.deadline)}',
                                     style: TextStyle(
                                       fontSize: 13,
                                       color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
@@ -1940,21 +1940,42 @@ class _AssignmentFormState extends State<AssignmentForm> {
     super.dispose();
   }
 
-  Future<void> _pickDeadline() async {
-    final now = DateTime.now();
-    final picked = await showDatePicker(
+    Future<void> _pickDeadline() async {
       context: context,
-      initialDate: _deadline ?? now,
-      firstDate: now,
+      initialDate: _deadline ?? now.add(const Duration(days: 7)),
+      firstDate: now.subtract(const Duration(days: 1)),
       lastDate: DateTime(now.year + 5),
+    };
+
+    if (pickedDate == null) return;
+
+    final TimeOfDay? pickedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(_deadline ?? now),
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(alwaysUse24hoursFormat: true),
+          child: child!,
+        );
+      },
     );
 
-    if (picked != null) {
-      setState(() {
-        _deadline = picked;
-      });
-    }
-  }
+
+    if (pickedTime == null) return;
+
+
+    //Combining date + time into one DateTIme
+    final DateTime finalDateTime = DateTime(
+        pickedDate.year,
+        pickedDate.month,
+        pickedDate.day,
+        pickedTime.hour,
+        pickedTime.minute,
+    );
+
+    setState(() {
+      _deadlne = finalDateTime;
+    });
 
   @override
   Widget build(BuildContext context) {
@@ -2118,23 +2139,38 @@ class _AssignmentFormState extends State<AssignmentForm> {
               const SizedBox(height: 10),
 
               // Deadline Picker
-              ListTile(
-                title: Text(
-                  _deadline == null
-                      ? 'Pick Deadline'
-                      : 'Deadline: ${_deadline!.toLocal().toString().split('.')[0]}',
-                ),
-                trailing: const Icon(Icons.calendar_today),
-                onTap: _pickDeadline,
-              ),
-              if (_deadline == null)
-                const Padding(
-                  padding: EdgeInsets.only(left: 16.0),
-                  child: Text(
-                    'Please Select a deadline',
-                    style: TextStyle(color: Colors.red),
+                ListTile(
+                  title: Text(
+                    _deadline == null ? 'Pick Deadline (Date + TIME)' : 'Deadline: ${_formatDateTime(_deadline!)}',
+                  ),
+
+                  trailing: const Icon(Icons.calendar_today),
+                  onTap: _pickDeadline,
+                  tileColor: Colors.grey[100],
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(color: Colors.grey[300]!),
                   ),
                 ),
+
+
+                if (_deadline == null) 
+                  Padding(
+                    padding: const EdgeInsets.only(left: 16.0, top: 4),
+                    child: Text(
+                      'Please select a date and time',
+                      style: TextStyle(color: Colors.red[700]),
+                    ),
+                    ),
+
+                  
+                  String _formatDateTime(DateTime dt) {
+                    final months =[
+                      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+                    ];
+                    return '${dt.day} ${months[dt.month - 1]} ${dt.year}, ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+                  }
+
               const SizedBox(height: 20),
 
               // Submit Button
@@ -2166,6 +2202,10 @@ class _AssignmentFormState extends State<AssignmentForm> {
         timerStartTime: widget.assignment?.timerStartTime,
       );
       Navigator.pop(context, assignment);
+    } else if (_deadline == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a deadline with date and time')),
+      );
     }
   }
 }
