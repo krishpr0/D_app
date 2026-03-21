@@ -743,6 +743,15 @@ class _AssignmentManagerState extends State<AssignmentManager> {
     role: UserRole.Teacher,
   );
 
+
+  String _formatDateTime(DateTime dt) {
+    final months = [
+      'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'
+    ];
+    return '${dt.day} ${months[dt.month - 1]} ${dt.year}, ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+  }   
+
+
   @override
   void initState() {
     super.initState();
@@ -1910,6 +1919,8 @@ class AssignmentForm extends StatefulWidget {
 
   @override
   State<AssignmentForm> createState() => _AssignmentFormState();
+
+
 }
 class _AssignmentFormState extends State<AssignmentForm> {
   final _formKey = GlobalKey<FormState>();
@@ -1919,6 +1930,15 @@ class _AssignmentFormState extends State<AssignmentForm> {
   late TextEditingController _submitToController;
   DateTime? _deadline;
   Priority _priority = Priority.Medium;
+
+
+    String _formatDateTime(DateTime dt) {
+      final months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+      final hour  = dt.hour.toString().padLeft(2, '0');
+      final minute = dt.minute.toString().padLeft(2, '0');
+      return '${dt.day} ${months[dt.month - 1]} ${dt.year}, $hour:$minute'; 
+    }
+
 
   @override
   void initState() {
@@ -1940,42 +1960,39 @@ class _AssignmentFormState extends State<AssignmentForm> {
     super.dispose();
   }
 
-    Future<void> _pickDeadline() async {
+   Future<void> _pickDeadline() async {
+    final now = DateTime.now();
+    final pickedDate = await showDatePicker(
       context: context,
       initialDate: _deadline ?? now.add(const Duration(days: 7)),
       firstDate: now.subtract(const Duration(days: 1)),
       lastDate: DateTime(now.year + 5),
-    };
+    );
 
     if (pickedDate == null) return;
 
     final TimeOfDay? pickedTime = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.fromDateTime(_deadline ?? now),
-      builder: (context, child) {
-        return MediaQuery(
-          data: MediaQuery.of(context).copyWith(alwaysUse24hoursFormat: true),
-          child: child!,
-        );
-      },
+      initialEntryMode: TimePickerEntryMode.dialOnly,
     );
-
 
     if (pickedTime == null) return;
 
-
-    //Combining date + time into one DateTIme
     final DateTime finalDateTime = DateTime(
-        pickedDate.year,
-        pickedDate.month,
-        pickedDate.day,
-        pickedTime.hour,
-        pickedTime.minute,
+      pickedDate.year,
+      pickedDate.month,
+      pickedDate.day,
+      pickedDate.day,
+      pickedTime.hour,
+      pickedTime.minute,
     );
 
+
     setState(() {
-      _deadlne = finalDateTime;
+      _deadline = finalDateTime;
     });
+   }
 
   @override
   Widget build(BuildContext context) {
@@ -2161,15 +2178,8 @@ class _AssignmentFormState extends State<AssignmentForm> {
                       'Please select a date and time',
                       style: TextStyle(color: Colors.red[700]),
                     ),
-                    ),
+                    ),        
 
-                  
-                  String _formatDateTime(DateTime dt) {
-                    final months =[
-                      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-                    ];
-                    return '${dt.day} ${months[dt.month - 1]} ${dt.year}, ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-                  }
 
               const SizedBox(height: 20),
 
@@ -2340,7 +2350,7 @@ class _ClassroomAssignmentFormState extends State<ClassroomAssignmentForm> {
             const SizedBox(height: 16),
             ListTile(
               title: Text(
-                  _dueDate == null ? ' Select Due Date' : 'Due Date: ${_dueDate!.toLocal().toString().split('')[0]}',
+                  _dueDate == null ? ' Select Due Date' : 'Due Date: ${_dueDate!.toLocal().toString().split(' ')[0]}',
               ),
               trailing: const Icon(Icons.calendar_today),
               onTap: _pickDeadline,
@@ -2858,6 +2868,14 @@ class _DashboardPageState extends State<DashboardPage> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   late Map<DateTime, List<Assignment>> _assignmentsByDay;
+
+
+    String _formatDateTime(DateTime dt) {
+      final months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+      final hour = dt.hour.toString().padLeft(2, '0');
+      final minute = dt.minute.toString().padLeft(2, '0');
+      return '${dt.day} ${months[dt.month - 1]} ${dt.year}, $hour:$minute';
+    }
 
   @override
   void initState() {
