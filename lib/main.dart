@@ -18,6 +18,8 @@ import 'package:provider/provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/signup_screen.dart';
 import 'services/auth_service.dart';
+import 'models/assignment_model.dart';
+import 'models/classroom_model.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
