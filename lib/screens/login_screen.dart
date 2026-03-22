@@ -130,7 +130,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                                         const SizedBox(height: 24),
                                         ElevatedButton(
-                                            onpressed: _login,
+                                            onPressed: _login,
                                             style: ElevatedButton.styleFrom(
                                                 minimumSize: const Size(double.infinity, 50),
                                             ),
@@ -142,7 +142,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                             onPressed: () {
                                                 Navigator.push(
                                                     context,
-                                                    MaterialPAgeRoute(bulder: (_) => const SignupScreen()),
+                                                    MaterialPageRoute(builder: (_) => const SignupScreen()),
                                                 );
                                             },
                                             child: const Text('Dont have an account? Sign Up'),
@@ -155,6 +155,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
             );
         }
+    }
+}
 
 
 
