@@ -6,7 +6,7 @@ import 'package:schoolapp/models/classroom_model.dart';
 
 
 class CloudClassroomService {
-  final FirebaseFirestore _firestore = FirebaseFireStore.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   //generae random invite code
   String _generateInviteCode() {
@@ -26,7 +26,7 @@ class CloudClassroomService {
     String section,
     ClassroomUser teacher
   ) async {
-    final classroom = Classroom (
+    final classroom = Classroom(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       name: name,
       subject: subject,

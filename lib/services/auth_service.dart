@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_service.dart';
+import '../models/classroom_model.dart';
 
 
 class AuthService extends ChangeNotifier {
@@ -45,7 +46,7 @@ class AuthService extends ChangeNotifier {
 
 
     Future<bool> signIn(String email, String password) async {
-        _isLoading =  true;
+        _isLoading = true;
         notifyListeners();
 
 

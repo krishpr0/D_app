@@ -74,7 +74,7 @@ class FirebaseService {
 
     if (user == null) return null;
 
-    Documentsnapshot doc = await _firestore.collection('users').doc(user.uid).get();
+    DocumentSnapshot doc = await _firestore.collection('users').doc(user.uid).get();
     if(!doc.exists) return null;
 
 
@@ -145,11 +145,12 @@ Future<void> createAssignment(Assignment assignment) async {
 
     if (user == null) return Stream.value([]);
 
-    return _firestore.collection('assignments').where('userId', isEqualTo: user.uid).orderBy('deadline', descending: false).snapshots().map((snapshot){
-      return Assignment.fromJson(doc.data());
-    }).toList();
-  });
-}
+    return _firestore.collection('assignments').where('UserId', isEqualTo: user.uid).orderBy('deadline', descending: false).snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) {
+        return Assignment.fromJson(doc.data());
+      }).toList();
+    });
+  }
 
 //Update assignments
 Future<void> updateAssignment(String id, Map<String, dynamic> data) async {
@@ -197,7 +198,12 @@ Stream<List<Classroom>> getUserClassrooms() {
 }
 
 
-//Join classroom via invite vode
+
+
+
+
+//=======================CLASSROOM ASSIGNMENTS+++++++++++++++++==========
+
 Future<bool> joinClassroom(String inviteCode, ClassroomUser student) async {
   try {
     QuerySnapshot snapshot = await _firestore.collection('classrooms').where('inviteCode', isEqualTo: inviteCode).limit(1).get();
@@ -205,83 +211,13 @@ Future<bool> joinClassroom(String inviteCode, ClassroomUser student) async {
     if (snapshot.docs.isEmpty) return false;
 
     DocumentReference classroomRef = snapshot.docs.first.reference;
-
     await classroomRef.update({'students': FieldValue.arrayUnion([student.toJson()])});
 
     return true;
   } catch (e) {
-    print('Join Classroom error: $e');
+    print('Join classroom error: $e');
     return false;
   }
 }
 
-
-
-
-//=======================CLASSROOM ASSIGNMENTS+++++++++++++++++===========
-
-
-//create classroom assignmnet
-Future<void> createClassroomAssignment(ClassroomAssignment assignment) async {
-  await _firestore.collection('clasroom_assignments').doc(assignment.id).set({
-    ...assignment.toJson(),
-    'createdAt': FieldValue.serverTimestamp(),
-  });
 }
-
-
-//Get aassignments for a classroom
-Stream<List<ClassroomAssignment>> getClassroomAssignments(String classroomId) {
-  return _firestore.collection('classroom_assignments').where('classroomId', isEqualTo: classroomId).orderBy('dueDate', descending: false).snapshots().map((snapshot) {
-    return snapshot.docs.map((doc) {
-      return ClassroomAssignment.fromJson(doc.data());
-    }).toList();
-  });
-}
-
-
-//Submit assignment
-Future<void> submitAssignment(
-String assignmentId,
-String studentId,
-String? textContent,
-List<String> attachments,
-) async {
-  final submission = StudentSubmission(
-    id: DateTime.now().millisecondsSinceEpoch.toString(),
-    studentId: studentId,
-    assignmentId: assignmentId,
-    textContent: textContent,
-    attachments: attachments,
-    submittedAt: DateTime.now(),
-  );
-
-  await _firestore.collection('classroom_assignments').doc(assignmentId).update({'submissions': FieldValue.arrayUnion([submission.toJson()])});
-}
-
-
-//Grade Submission
-Future<void> gradeSubmission(
-String assignmentId,
-String studentId,
-double grade,
-String? feedback,
-) async {
-  DocumentReference assignmentRef = _firestore.collection('classroom_assignments').docs(assignmentId);
-
-
-  DocumentSnapshot doc = await assignmentRef.get();
-  ClassroomAssignment assignment = ClassroomAssignment.fromJson(doc.data() as Map<String, dynamic>);
-
-  List<StudentSubmission> updatedSubmissions = assignment.submissions.map((sub) {
-    if(sub.studentId == studentId) {
-      sub.grade = grade;
-      sub.feedback = feedback;
-    }
-    return sub;
-  }).toList();
-
-  await assignmentRef.update({'submissions': updatedSubmissions.map((s) => s.toJson()).toList(),});
-  }
-}
-

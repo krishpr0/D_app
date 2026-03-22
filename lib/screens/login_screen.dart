@@ -31,7 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
 
     Future<void> _handleLogin() async {
-        if (!_formKey.currentState!.validate()) {
+        if (_formKey.currentState!.validate()) {
             final authService = Provider.of<AuthService>(context, listen: false);
 
             bool success = await authService.signIn(
@@ -44,7 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
             if (success) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Login succesful!')),
+                    const SnackBar(content: Text('Login successful!')),
                 );
             }  else {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -55,7 +55,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 );
             }
         }
-
+    }
         @override
         Widget build(BuildContext context) {
             return Scaffold(
@@ -88,7 +88,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                             ),
                                             validator: (value) {
                                                 if (value == null || value.isEmpty) {
-                                                    return 'Please emter email';
+                                                    return 'Please enter email';
                                                 }
 
                                                 if (!value.contains('@')) {
@@ -113,12 +113,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                                         });
                                                     },
                                                 ),
-                                                border: const OutLineInputBorder(),
+                                                border: const OutlineInputBorder(),
                                             ),
 
                                             validator: (value) {
                                                 if (value == null || value.isEmpty) {
-                                                    return 'Pleas enter a password';
+                                                    return 'Please enter a password';
                                                 }
 
                                                 if (value.length < 6) {
@@ -130,11 +130,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
                                         const SizedBox(height: 24),
                                         ElevatedButton(
-                                            onPressed: _login,
+                                            onPressed: _handleLogin,
                                             style: ElevatedButton.styleFrom(
                                                 minimumSize: const Size(double.infinity, 50),
                                             ),
-                                            child: const Text('login', style: TextStyle(fontSize: 16)),
+                                            child: const Text('Login', style: TextStyle(fontSize: 16)),
                                         ),
 
                                         const SizedBox(height: 16),
@@ -156,7 +156,7 @@ class _LoginScreenState extends State<LoginScreen> {
             );
         }
     }
-}
+
 
 
 

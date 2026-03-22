@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:schoolapp/models/classroom_model.dart';
 import '../services/auth_service.dart';
 
 
@@ -18,6 +19,7 @@ class _SignupScreenState extends State<SignupScreen> {
     final _emailController = TextEditingController();
     final _passwordController = TextEditingController();
     final _confirmPasswordController = TextEditingController();
+    UserRole _selectedRole = UserRole.Student;
     bool _obscurePassword = true;
     bool _obscureConfirmPassword = true;
 
