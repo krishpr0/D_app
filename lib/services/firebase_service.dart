@@ -8,7 +8,7 @@ import 'dart:io';
 
 class FirebaseService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _fireStore  = FirebaseFirestore.instance;
+  final FirebaseFirestore _firestore  = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
 
 
@@ -104,7 +104,7 @@ Future<void> updateUserProfile(String name, {File? photo}) async {
       //upload photo if provoded
   String? photoURL;
   if (photo != null) {
-    Reference ref = _storage.ref(),child('users/${user.uid}/profile.jpg');
+    Reference ref = _storage.ref().child('users/${user.uid}/profile.jpg');
     await ref.putFile(photo);
     photoURL = await ref.getDownloadURL();
     await user.updatePhotoURL(photoURL);
@@ -274,7 +274,7 @@ String? feedback,
   ClassroomAssignment assignment = ClassroomAssignment.fromJson(doc.data() as Map<String, dynamic>);
 
   List<StudentSubmission> updatedSubmissions = assignment.submissions.map((sub) {
-    if(sub.studentOd == studentId) {
+    if(sub.studentId == studentId) {
       sub.grade = grade;
       sub.feedback = feedback;
     }
@@ -284,3 +284,4 @@ String? feedback,
   await assignmentRef.update({'submissions': updatedSubmissions.map((s) => s.toJson()).toList(),});
   }
 }
+

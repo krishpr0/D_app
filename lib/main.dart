@@ -20,22 +20,16 @@ import 'screens/signup_screen.dart';
 import 'services/auth_service.dart';
 import 'models/assignment_model.dart';
 import 'models/classroom_model.dart';
+import 'firebase_options.dart';
+
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
- //Initialize firebase only on platfomr where it acually works
-  try {
-    if (kIsWeb || Platform.isAndroid || Platform.isIOS) {
-      await Firebase.initializeApp();
-      print("Firebase initiazlied succes");
-    } else {
-      print("Firebase skipped - runnoing on (${Platform.operatingSystem}");
-    }
-  } catch (e) {
-    print("Firebase init falied: $e");
-  }
-  runApp(const MyApp());
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 }
 
 enum AssignmentStatus {Todo, InProgress, Completed}
@@ -467,9 +461,20 @@ class NotificationService {
 
   static Future<void> initialize() async {
     const AndroidInitializationSettings androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const InitializationSettings settings = InitializationSettings(android: androidSettings);
-    await _notifications.initialize(settings);
+    const InitializationSettings settings = InitializationSettings(
+
+    android: androidSettings,
+    //IOS/macos/linux/windows left
+    );
+
+    await _notifications.initialize(
+      settings: settings,
+      onDidReceiveNotificationResponse: (NotificationResponse response) async {
+        print("notification tapped: ${response.payload}");
+      },
+    );
   }
+
 
   static Future<void> scheduleAssignmentReminder(Assignment assignment) async {
     const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
@@ -484,33 +489,35 @@ class NotificationService {
     final remindertime = assignment.deadline.subtract(const Duration(days: 1));
     if (remindertime.isAfter(DateTime.now())) {
       await _notifications.show(
-        assignment.hashCode,
-        'Assignments added',
-        '${assignment.title} is due on ${assignment.deadline.toLocal().toString().substring(0, 10)[0]}',
-        details,
+        id: assignment.hashCode,
+        title: 'Assignment Reminder',
+        body: '${assignment.title} is due on ${assignment.deadline.toLocal().toString().split(' ')[0]}',
+        payload: 'reminder_${assignment.hashCode}',
+        notificationDetails: details,
       );
     }
 
     await _notifications.show(
-      assignment.hashCode + 1,
-      'ASSIGNMENT DUE TODAY!!!!!',
-      '${assignment.title} is due today',
-      details,
+      id: assignment.hashCode + 1,
+      title: 'ASSIGNMENT DUE TODAY!!!!!',
+      body: '${assignment.title} is due today',
+      notificationDetails: details,
     );
+
       //Reminder expierd notificaiton
     final expiredTime = assignment.deadline.add(const Duration(days: 1));
     await _notifications.show(
-      assignment.hashCode + 2,
-      'Assignment Overdue!',
-      '${assignment.title} was due yesterday',
-      details,
+      id: assignment.hashCode + 2,
+      title: 'Assignment Overdue!',
+      body: '${assignment.title} was due yesterday',
+      notificationDetails: details,
     );
   }
 
   static Future<void> cancelAssignmentsReminders(Assignment assignment) async {
-    await _notifications.cancel(assignment.hashCode);
-    await _notifications.cancel(assignment.hashCode + 1);
-    await _notifications.cancel(assignment.hashCode + 2);
+    await _notifications.cancel(id: assignment.hashCode);
+    await _notifications.cancel(id: assignment.hashCode + 1);
+    await _notifications.cancel(id: assignment.hashCode + 2);
   }
 }
 
@@ -523,18 +530,22 @@ class ExportService {
     final csvData = StringBuffer();
     csvData.writeln('Subject, Title, Description, Deadline, Status, Priority, Timespent');
 
+    final tempDir = await getTemporaryDirectory();
+    final file = File('${tempDir.path}/assignments_${DateTime.now().millisecondsSinceEpoch}.csv');
+    await file.writeAsString(csvData.toString());
+
+    await Share.shareXFiles(
+      [XFile(file.path)],
+      text: 'Here are my assignment export!',
+      subject: 'Assignment Export',
+    );
+
     for (var assignment in assignments) {
       csvData.writeln('${assignment.subject}, ${assignment.title}.'
           '${assignment.description}, ${assignment.deadline.toIso8601String()},'
           '${assignment.status}, ${assignment.priority}, ${assignment.timeSpent?.inMinutes ?? 0}'
       );
     }
-
-    final tempDir = await getTemporaryDirectory();
-    final file = File('${tempDir.path}/assignments_${DateTime.now().millisecondsSinceEpoch}.csv');
-    await file.writeAsString(csvData.toString());
-
-    await Share.shareFiles([(file.path)]);
   }
 
   static Future<List<Assignment>> importFromCSV() async {
