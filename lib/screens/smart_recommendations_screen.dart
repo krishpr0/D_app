@@ -284,8 +284,161 @@ class _SmartRecommendationsScreenState extends State<SmartRecommendationsScreen>
     }
 
     Widget _buildPredictionsTab() {
-      
+      final pendingAssignments = widget.assignments.where((a) =>
+      a.status != AssignmentStatus.Completed).toList();
+
+      return FutureBuilder(
+        future: _loadPredictions(pendingAssignments),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressINdicator());
+          }
+
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              const Card(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      Icon(Icons.psychology, size: 48, color: Colors.purple),
+                      SizedBox(height: 12),
+                      Text('AI Study Predictor',
+                        style: TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                      Text('Based on your study patteners',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+              ...pendingAssignments.map((assignment) {
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: _getPriorityColorFromEnum(
+                          assignment.priority),
+                      child: Text(assignment.priority
+                          .toString()
+                          .split('.')
+                          .last[0]),
+                    ),
+                    title: Text(assignment.title),
+                    subtitle: Text(_prediction),
+                    onTap: () => _showAssignmentDetails(assignment),
+                  ),
+                );
+              }),
+            ],
+          );
+        },
+      );
     }
+
+    Future<void> _loadPredictions(List<Assignment> assignments) async {
+   if (assignments.isNotEmpty) {
+     _prediction = await _recommendationService.predictCompletionTime(assignments[0]);
+     setState(() {});
+   }
+ }
+
+
+ void _startStudySession(Assignment assignment) {
+   Navigator.pushNamed(
+     context,
+     '/study',
+     arguments: assignment.subject,
+   );
+ }
+
+
+ void _showAssignmentsDetails(Assignment assignment) {
+   showDialog(
+     context: context,
+     builder: (context) => AlertDialog(
+       title: Text(assignment.title),
+       content: Column(
+         mainAxisSize: MainAxisSize.min,
+         crossAxisAlignment: CrossAxisAlignment.start,
+         children: [
+           Text('Subject: ${assignment.subject}'),
+           const SizedBox(height: 8),
+           Text('Description: ${assignment.description}'),
+           const SizedBox(height: 8),
+           Text('Due: ${_formatDate(assignment.deadline)}'),
+         ],
+       ),
+
+       actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
+       ],
+     ),
+   );
+ }
+
+
+ Widget _buildInfoChip(IconData icon, String label, Color color) {
+   return Chip(
+     avatar: Icon(icon, size: 16, color: color),
+     label: Text(
+       label,
+       style: TextStyle(fontSize: 12, color: color),
+     ),
+
+     backgroundColor: color.withOpacity(0.1),
+     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+   );
+ }
+
+
+ Color _getPriorityColor(double score) {
+   if (score >= 80) return Colors.red;
+   if (score >= 60) return Colors.orange;
+   if (score >= 40) return Colors.yellow.shade700;
+   return Colors.green;
+ }
+
+ Color _getPriorityColorFromEnum(Priority priority) {
+   switch (priority) {
+     case Priority.Low:
+       return Colors.green;
+
+     case Priority.Medium:
+       return Colors.orange;
+
+     case Priority.High:
+       return Colors.red;
+
+     case Priority.Urgent:
+       return Colors.purple;
+   }
+ }
+
+ String _formatDate(DateTime date) {
+   final now = DateTime.now();
+   final difference = date.difference(now).inDays;
+
+   if (difference == 0) return 'Today';
+   if (difference == 1) return 'Tomorrow';
+   if (difference < 0) return 'Overdue';
+   return 'In $difference days';
+ }
+
+ String _formatTime(DateTime time) {
+   final hour = time.hour.toString().padLeft(2, '0');
+   final minute = time.minute.toString().padLeft(2, '0');
+   return '$hour:$minute';
+ }
+
 
 
 
