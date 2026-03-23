@@ -21,7 +21,10 @@ import 'services/auth_service.dart';
 import 'models/assignment_model.dart';
 import 'models/classroom_model.dart';
 import 'firebase_options.dart';
-
+import 'package:connectivity_plus/connectivity_plus.dart';
+import '../services/connectivity_service.dart';
+import '../models/study_timer_service.dart';
+import '../models/study_session_model.dart';
 
 
 void main() async {
@@ -687,6 +690,8 @@ class _MyAppState extends State<MyApp> {
         providers: [
           ChangeNotifierProvider(create: (_) => AuthService()),
           ChangeNotifierProvider(create: (_) => ThemeService()),
+          ChangeNotifierProvider(create: (_) => StudyTimerService()),
+          ChangeNotifierProvider(create: (_) => ConnectivityService()),
         ],
 
         child: Consumer<ThemeService>(
@@ -1258,6 +1263,18 @@ class _AssignmentManagerState extends State<AssignmentManager> {
       appBar: AppBar(
         title: const Text('Assignment Manager'),
         actions: [
+          IconButton(
+            icon:const Icon(Icons.timer),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const StudyTimerScreen(),
+                ),
+              );
+            },
+            tooltip: 'Focus Timer',
+          ),
           IconButton(
             icon: const Icon(Icons.school),
             onPressed: _showClassroomList,
