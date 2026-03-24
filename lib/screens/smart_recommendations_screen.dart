@@ -158,7 +158,7 @@ class _SmartRecommendationsScreenState extends State<SmartRecommendationsScreen>
 
                     const SizedBox(height: 12),
                     Container(
-                      padding: const EDgeInsets.all(12),
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: Colors.blue[50],
                         borderRadius: BorderRadius.circular(8),
@@ -188,7 +188,7 @@ class _SmartRecommendationsScreenState extends State<SmartRecommendationsScreen>
                             },
                             icon: const Icon(Icons.play_arrow),
                             label: const Text('Start studying'),
-                            style: ElevatedButton.styleForn(
+                            style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.green,
                             ),
                           ),
@@ -267,7 +267,7 @@ class _SmartRecommendationsScreenState extends State<SmartRecommendationsScreen>
                     title: Text(slot.task),
                     subtitle: Text('${_formatTime(slot.startTime)} - ${_formatTime(slot.endTime)} (${slot.duration}h)',),
                     trailing: Checkbox(
-                      value: slot.isCompletedm
+                      value: slot.isCompleted,
                       onChanged: (value) {
                         setState(() {
                             //MARKS AS COMPELTED hmm
@@ -291,7 +291,7 @@ class _SmartRecommendationsScreenState extends State<SmartRecommendationsScreen>
         future: _loadPredictions(pendingAssignments),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressINdicator());
+            return const Center(child: CircularProgressIndicator());
           }
 
           return ListView(
@@ -407,40 +407,24 @@ class _SmartRecommendationsScreenState extends State<SmartRecommendationsScreen>
    return Colors.green;
  }
 
- Color _getPriorityColorFromEnum(Priority priority) {
-   switch (priority) {
-     case Priority.Low:
-       return Colors.green;
-
-     case Priority.Medium:
-       return Colors.orange;
-
-     case Priority.High:
-       return Colors.red;
-
-     case Priority.Urgent:
-       return Colors.purple;
-   }
- }
-
- String _formatDate(DateTime date) {
-   final now = DateTime.now();
-   final difference = date.difference(now).inDays;
-
-   if (difference == 0) return 'Today';
-   if (difference == 1) return 'Tomorrow';
-   if (difference < 0) return 'Overdue';
-   return 'In $difference days';
- }
-
- String _formatTime(DateTime time) {
-   final hour = time.hour.toString().padLeft(2, '0');
-   final minute = time.minute.toString().padLeft(2, '0');
-   return '$hour:$minute';
- }
 
 
+Color _getPriorityColorFromEnum(Priority p) {
+  switch (p) {
+    case Priority.Low: return Colors.green;
+    case Priority.Medium: return Colors.orange;
+    case Priority.High: return Colors.red;
+    case Priority.Urgent: return Colors.purple;
+  }
+}
 
-
-
+String _formatDate(DateTime date) {
+    final diff = date.difference(DateTime.now()).inDays;
+    if (diff == 0) return 'Today';
+    if (diff == 1) return 'Tommorow';
+    if (diff < 0) return 'Overdue';
+    return 'In $diff days';
+}
+String _formatTime(DateTime time) => '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+ 
 }

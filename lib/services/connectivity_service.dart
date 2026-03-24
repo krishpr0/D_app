@@ -18,7 +18,7 @@ class ConnectivityService extends ChangeNotifier {
   void init() {
     _connectivity.checkConnectivity().then((result) {
       _connectivityResult = result;
-      _isConnected = result != connectivityResult.none;
+      _isConnected = !result.contains(ConnectivityResult.none);
       notifyListeners();
     });
 
@@ -26,7 +26,7 @@ class ConnectivityService extends ChangeNotifier {
     //Listen to connectivity changes
     _connectivity.onConnectivityChanged.listen((result) {
       _connectivityResult = result;
-      _isConnected = result != connectivityResult.none;
+      _isConnected = !result.contains(ConnectivityResult.none);
       notifyListeners();
     });
   }
@@ -42,32 +42,11 @@ class ConnectivityService extends ChangeNotifier {
 
   //Get connection type string
   String getConnectionType() {
-    switch (_connectivityResult) {
-      
-      case ConnectivityResult.wifi:
-        return 'Wi-Fi';
-
-      case ConnectivityResult.mobile:
-        return 'Mobile Data';
-
-        case ConnectivityResult.ethernet:
-        return 'Ehternet';
-
-        case ConnectivityResult.vpn:
-        return 'VPN';
-
-        case ConnectivityResult.bluetooth:
-        return 'Bluetooth';
-
-        case ConnectivityResult.other:
-        return 'other';
-
-        case ConnectivityResult.none:
-        return 'No connection';
-
-        default:
-        return 'Unknown';
-    }
+    if (_connectivityResult.contains(ConnectivityResult.wifi)) return 'Wi-Fi';
+    if (_connectivityResult.contains(ConnectivityResult.mobile)) return 'Mobile Data';
+    if (_connectivityResult.contains(ConnectivityResult.ethernet)) return 'Ethernet';
+    if (_connectivityResult.contains(ConnectivityResult.vpn)) return 'VPN';
+    if (_connectivityResult.contains(ConnectivityResult.bluetooth)) return 'Bluetooth';
   }
 
 
@@ -84,9 +63,7 @@ class ConnectivityService extends ChangeNotifier {
             onPressed: () async {
               await checkConnection();
 
-              if (_isConnected) {
-                Navigator.pop(context);
-              }
+              if (_isConnected) Navigator.pop(context);
             },
             child: const Text('Retry'),
           ),

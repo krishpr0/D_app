@@ -108,9 +108,9 @@ class RecommendationService {
 
 
     List<AssignmentRecommendation> getRecommendations(
-      List<Assignment> assignments,
-      int limit = 3
-    ) {
+      List<Assignment> assignments, {
+      int limit = 3,
+    }) {
       final pendingAssignments = assignments.where((a) => a.status != AssignmentStatus.Completed).toList();
       final recommendations = <AssignmentRecommendation>[];
 

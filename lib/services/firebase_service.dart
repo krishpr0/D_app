@@ -15,7 +15,7 @@ class FirebaseService {
   /// Auth
   
   //singup with email and pass
-  Future<User?> singUpWithEmail(String email, String password, String name, UserRole role) async {
+  Future<User?> signUpWithEmail(String email, String password, String name, UserRole role) async {
     try {
       UserCredential result = await _auth.createUserWithEmailAndPassword(
         email: email,
@@ -43,7 +43,7 @@ class FirebaseService {
   }
 
   //Sign in with email and password
-  Future<User?> singInWithEmail(String email, String password) async {
+  Future<User?> signInWithEmail(String email, String password) async {
     try {
       UserCredential result = await _auth.signInWithEmailAndPassword(
               email: email,

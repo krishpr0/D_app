@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/assignment_model.dart';
 
 class AssignmentRecommendation {
   final Assignment assignment;
