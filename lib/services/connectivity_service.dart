@@ -6,7 +6,6 @@ class ConnectivityService extends ChangeNotifier {
   bool _isConnected = true;
   ConnectivityResult _connectivityResult = ConnectivityResult.none;
 
-
   bool get isConnected => _isConnected;
   ConnectivityResult get connectivityResult => _connectivityResult;
 
@@ -14,55 +13,57 @@ class ConnectivityService extends ChangeNotifier {
     _init();
   }
 
-
-  void init() {
+  void _init() {
     _connectivity.checkConnectivity().then((result) {
-      _connectivityResult = result;
-      _isConnected = !result.contains(ConnectivityResult.none);
-      notifyListeners();
-    });
-
-
-    //Listen to connectivity changes
+      _handleConnectivityChange(result);
+    })
+    
     _connectivity.onConnectivityChanged.listen((result) {
-      _connectivityResult = result;
-      _isConnected = !result.contains(ConnectivityResult.none);
-      notifyListeners();
+        _handleConnectivityChange(result);
     });
   }
 
+    void _handleConnectivityChange(List<ConnectivityResult> result) {
+      if (result.isEmpty) return;
+      _connectivityResult = result.first;
+      _isConnected = _connectivityResult != ConnectivityResult.none;
+      notifyListeners();
+    }
 
-  //Manually check connection
+
   Future<void> checkConnection() async {
-    final result = await _connectivity.checkConnectivity();
-    _isConnected = result != ConnectivityResult.none;
-    notifyListeners();
+   final result = await _connectivity.checkConnectivity();
+   _handleConnectivityChange(result);
   }
 
-
-  //Get connection type string
   String getConnectionType() {
-    if (_connectivityResult.contains(ConnectivityResult.wifi)) return 'Wi-Fi';
-    if (_connectivityResult.contains(ConnectivityResult.mobile)) return 'Mobile Data';
-    if (_connectivityResult.contains(ConnectivityResult.ethernet)) return 'Ethernet';
-    if (_connectivityResult.contains(ConnectivityResult.vpn)) return 'VPN';
-    if (_connectivityResult.contains(ConnectivityResult.bluetooth)) return 'Bluetooth';
+    switch (_connectivityResult) {
+      case ConnectivityResult.wifi:
+        return 'Wi-Fi';
+      case ConnectivityResult.mobile:
+        return 'Mobile Data';
+      case ConnectivityResult.ethernet:
+        return 'Ethernet';
+      case ConnectivityResult.vpn:
+        return 'VPN';
+      case ConnectivityResult.bluetooth:
+        return 'Bluetooth';
+      default:
+        return 'No Connection';
+    }
   }
 
-
-  //Show no internet dialog
   void showNoInternetDialog(BuildContext context) {
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         title: const Text('No Internet Connection'),
-        content: const Text('Plesae check your internet and try again?'),
+        content: const Text('Please check your internet connection and try again.'),
         actions: [
           TextButton(
             onPressed: () async {
               await checkConnection();
-
               if (_isConnected) Navigator.pop(context);
             },
             child: const Text('Retry'),
@@ -72,24 +73,22 @@ class ConnectivityService extends ChangeNotifier {
     );
   }
 
-  
-  //show offline mode 
   Widget buildOfflineBanner() {
-      if (_isConnected) return const SizedBox.shrink();
-
-      return Container(
-        color: Colors.orange,
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.wifi_off, size: 16, color: Colors.white),
-            const SizedBox(width: 8),
-            const Text('Offline Mode - Features may be limited',
-              style: TextStyle(color: Colors.white, fontSize: 12),
-            ),
-          ],
-        ),
-      );
+    if (_isConnected) return const SizedBox.shrink();
+    return Container(
+      color: Colors.orange,
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.wifi_off, size: 16, color: Colors.white),
+          const SizedBox(width: 8),
+          const Text(
+            'Offline Mode – Some features may be limited',
+            style: TextStyle(color: Colors.white, fontSize: 12),
+          ),
+        ],
+      ),
+    );
   }
 }

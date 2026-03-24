@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:schoolapp/screens/study_timer_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -20,19 +21,20 @@ import 'screens/signup_screen.dart';
 import 'services/auth_service.dart';
 import 'models/assignment_model.dart';
 import 'models/classroom_model.dart';
-import 'firebase_options.dart';
+//import 'firebase_options.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../services/connectivity_service.dart';
 import '../models/study_timer_service.dart';
 import '../models/study_session_model.dart';
-
+import 'services/study_timer_service.dart';
+import 'screens/study_timer_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
+ /* await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
-  );
+  );*/
 }
 
 enum AssignmentStatus {Todo, InProgress, Completed}
@@ -690,7 +692,7 @@ class _MyAppState extends State<MyApp> {
         providers: [
           ChangeNotifierProvider(create: (_) => AuthService()),
           ChangeNotifierProvider(create: (_) => ThemeService()),
-          ChangeNotifierProvider(create: (_) => StudyTimerService()),
+          ChangeNotifierProvider<StudyTimerService>(create: (_) => StudyTimerService()),
           ChangeNotifierProvider(create: (_) => ConnectivityService()),
         ],
 
@@ -1269,7 +1271,7 @@ class _AssignmentManagerState extends State<AssignmentManager> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => const StudyTimerScreen(),
+                  builder: (_) => StudyTimerScreen(),
                 ),
               );
             },
