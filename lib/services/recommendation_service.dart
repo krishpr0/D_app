@@ -9,11 +9,10 @@ class RecommendationService {
   RecommendationService(this._timerService);
 
   //This block calcultes how urgent an assignment is based on the deadline of the assignment
-    double _calculateUrgencyScore(Assignment assignment) {
-      final now = DateTime.now();
-      final daysLeft = assignment.deadline.difference(now).inDays;
+    double _calculateUrgencyScore(Assignment a) {
+    final daysLeft = a.deadline.difference(DateTime.now()).inDays;
 
-      if (assignment.status == AssignmentStatus.Completed) return 0;
+      if (a.status == AssignmentStatus.Completed) return 0;
 
       if (daysLeft <= 0) return 100;
       if (daysLeft == 1) return 95;
@@ -23,63 +22,36 @@ class RecommendationService {
       return 20;
     }
 
-    double _calculateDifficultyScore(Assignment assignment) {
-      double baseScore = 30;
+   double _calculateDifficultyScore(Assignment a) {
+    double base = 30;
 
-      switch (assignment.priority) {
-        case Priority.Low:
-          baseScore = 20;
-          break;
-
-        case Priority.Medium:
-          baseScore = 40;
-          break;
-
-        case Priority.High:
-          baseScore = 60;
-          break;
-
-        case Priority.Urgent:
-          baseScore = 80;
-          break;
-      }
-
-
-      final descriptionLength =  assignment.description.length;
-      if (descriptionLength > 500) baseScore += 20;
-      else if (descriptionLength > 200) baseScore +=10;
-
-      final random = Random();
-      baseScore += random.nextInt(10);
-
-      return min(baseScore, 100);
+    switch (a.priority) {
+      case Priority.Low: base = 20; break;
+      case Priority.Medium: base = 40; break;
+      case Priority.High: base = 60; break;
+      case Priority.Urgent: base = 80; break;
     }
 
-    int _estimateHours(Assignment assignment) {
-      double baseHours = 2;
+    if (a.description.length > 500) base += 20;
+    else if (a.description.length > 200) base += 10;
+    base += Random().nextInt(10);
+    return base.clamp(0, 100).toDouble();
+   }
 
-      switch (assignment.priority) {
-        case Priority.Low:
-          baseHours = 1;
-          break;
+    int _estimateHours(Assignment a) {
+      double base = 2;
 
-        case Priority.Medium:
-          baseHours = 2;
-          break;
-
-        case Priority.High:
-          baseHours = 4;
-          break;
-
-        case Priority.Urgent:
-          baseHours = 6;
-          break;
+      switch (a.priority) {
+        case Priority.Low: base = 1; break;
+        case Priority.Medium: base = 2; break;
+        case Priority.High: base = 4; break;
+        case Priority.Urgent: base = 6; break;
       }
 
-      if (assignment.description.length > 500) baseHours += 2;
-      else if (assignment.description.length > 200) baseHours += 1;
+      if (a.description.length > 500) base += 2;
+      else if (a.description.length > 200) base += 1;
 
-      return baseHours.round();
+      return base.round();
     }
 
 
@@ -107,42 +79,29 @@ class RecommendationService {
     }
 
 
-    List<AssignmentRecommendation> getRecommendations(
-      List<Assignment> assignments, {
-      int limit = 3,
-    }) {
-      final pendingAssignments = assignments.where((a) => a.status != AssignmentStatus.Completed).toList();
-      final recommendations = <AssignmentRecommendation>[];
-
-      for (var assignment in pendingAssignments) {
-        final urgency = _calculateUrgencyScore(assignment);
-        final difficulty = _calculateDifficultyScore(assignment);
-        final estimatedHours = _estimateHours(assignment);
-        final priorityScore = (urgency * 0.7) + (difficulty * 0.3);
-        final reason = _generateReason(assignment, urgency, difficulty);
-        final isOverdue = assignment.deadline.isBefore(DateTime.now());
-
-        recommendations.add(AssignmentRecommendation(
-          assignment: assignment,
-          urgencyScore: urgency,
-          difficultyScore: difficulty,
-          priorityScore: priorityScore,
-          reason: reason,
-          estimatedHours: estimatedHours,
-          isOverdue: isOverdue, 
-        ));
-      } 
-
-      recommendations.sort((a, b) => b.priorityScore.compareTo(a.priorityScore));
-      return recommendations.take(limit).toList();
-    }
+      List<AssignmentRecommendation> getRecommendations(List<Assignment> assignments, [int limit = 3]) {
+        final pending = assignments.where((a) => a.status != AssignmentStatus.Completed).toList();
+        final recs = <AssignmentRecommendation>[];
+        for (var a in pending) {
+          final urgency = _calculateUrgencyScore(a);
+          final difficulty = _calculateDifficultyScore(a);
+          final hours = _estimateHours(a);
+          final priorityScore = (urgency * 0.7) + (difficulty * 0.3);
+          recs.add(AssignmentRecommendation(
+            assignment: a, urgencyScore: urgency, difficultyScore: difficulty,
+            priorityScore: priorityScore, reason: _generateReason(a, urgency, difficulty),
+            estimatedHours: hours, isOverdue: a.deadline.isBefore(DateTime.now()),
+          ));
+        }
+        recs.sort((a, b) => b.priorityScore.compareTo(a.priorityScore));
+        return recs.take(limit).toList();
+      }
 
 
-    Future<String> predictCompletionTime(Assignment assignment) async {
-      final studyTime = _timerService.getTodayStudyMinutes();
-      final avgStudyTime = _timerService.getWeeklyStudyMinutes() / 7;
-      final hoursNeeded = _estimateHours(assignment);
-      final daysLeft = assignment.deadline.difference(DateTime.now()).inDays;
+    Future<String> predictCompletionTime(Assignment a) async {
+      final avgStudy = _timerService.getWeeklyStudyMinutes() / 7;
+      final hoursNeeded = _estimateHours(a);
+      final daysLeft = a.deadline.difference(DateTime.now()).inDays;
 
       if (daysLeft <= 0) {
         return 'This assignment is overdue! Focus BOI Focus';
@@ -150,9 +109,9 @@ class RecommendationService {
 
       final hoursPerDayNeeded = hoursNeeded / daysLeft;
 
-      if (avgStudyTime >= hoursPerDayNeeded * 60) {
+      if (avgStudy >= hoursPerDayNeeded * 60) {
         return 'On track! U can finish it on time at this rate GOOD boi';
-      } else if (avgStudyTime >= (hoursPerDayNeeded * 60) * 0.7) {
+      } else if (avgStudy >= (hoursPerDayNeeded * 60) * 0.7) {
         return 'U R A BIT BEHIND THE SCHEDULE, TRY STUDYING KID ${(hoursPerDayNeeded * 60).round()} minutes per day to catch up.';
       } else {
         return 'U R NOW BEHIND THE SCHEDULE, LOCCKKKK INNN u still need ${(hoursPerDayNeeded * 60).round()} minutes/day to complete on time. Complete ittttt~!!!!!';
@@ -165,66 +124,30 @@ class RecommendationService {
       List<Assignment> assignments,
       int availableHours
     ) {
-      final recommendations = getRecommendations(assignments, 5);
+      final recs = getRecommendations(assignments);
       final schedule = <String, List<TimeSlot>>{};
-      var currentTime = DateTime.now();
-      var remaningHours = availableHours;
-      var slotIndex = 0;
-
-
-      //Round to next hr
-      currentTime = DateTime(
-        currentTime.year,
-        currentTime.month,
-        currentTime.day,
-        currentTime.hour + 1,
-        0,
-      );
-
-
-      for (var rec in recommendations) {
-        if (remaningHours <= 0) break;
-
-        final studyHours = min(rec.estimatedHours, remaningHours);
-        final endTime = currentTime.add(Duration(hours: studyHours));
+      var currentTime = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day, DateTime.now().hour + 1, 0);
+      var remaining = availableHours;
+      for (var rec in recs) {
+        if (remaining <= 0) break;
+        final studyHours  = rec.estimatedHours < remaining ? rec.estimatedHours : remaining;
         final slot = TimeSlot(
           startTime: currentTime,
-          endTime: endTime,
-          task: 'Study: ${rec.assignment.subject}',
+          endTime: currentTime.add(Duration(hours: studyHours)),
+          task: 'Study: ${rec.assignment.title}',
           subject: rec.assignment.subject,
           assignment: rec.assignment,
         );
-
-
-        if (!schedule.containsKey(rec.assignment.subject)) {
-          schedule[rec.assignment.subject] = [];
-        }
-        schedule[rec.assignment.subject]!.add(slot);
-
-        currentTime = endTime.add(const Duration(minutes: 15));
-        remaningHours -= studyHours;
-        slotIndex++;
+        schedule.putIfAbsent(rec.assignment.subject, () => []).add(slot);
+        currentTime = slot.endTime.add(const Duration(minutes: 15));
+        remaining -= studyHours;
       }
-
       return StudySchedule(
         date: DateTime.now(),
         schedule: schedule,
-        totalHoursPlanned: availableHours - remaningHours,
+        totalHoursPlanned: availableHours - remaining,
         completedHours: 0,
-        productivityScore: 0.0,
+        productivityScore: 0
       );
-    }
-
-
-
-    double calculateProductivityScore(List<TimeSlot> completedSlots) {
-      if (completedSlots.isEmpty) return 0.0;
-
-      double totalScore = 0;
-      for (var slot in completedSlots) {
-        double score = slot.duration.inHours * 10;
-        totalScore += min(score, 30);
-      }
-      return min((totalScore / completedSlots.length) * 10, 100);
     }
 }

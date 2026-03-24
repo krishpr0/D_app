@@ -5,7 +5,6 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:schoolapp/screens/study_timer_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -14,20 +13,24 @@ import 'package:file_picker/file_picker.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/services.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
-import 'screens/login_screen.dart';
-import 'screens/signup_screen.dart';
-import 'services/auth_service.dart';
+import 'package:cross_file/cross_file.dart';
+
+// Models
 import 'models/assignment_model.dart';
 import 'models/classroom_model.dart';
-//import 'firebase_options.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
-import '../services/connectivity_service.dart';
-import '../models/study_timer_service.dart';
-import '../models/study_session_model.dart';
+
+// Services
+import 'services/auth_service.dart';
+import 'services/connectivity_service.dart';
 import 'services/study_timer_service.dart';
+import 'services/recommendation_service.dart';
+
+// Screens
+import 'screens/login_screen.dart';
+import 'screens/signup_screen.dart';
 import 'screens/study_timer_screen.dart';
+import 'screens/smart_recommendations_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

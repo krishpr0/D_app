@@ -386,6 +386,35 @@ class _SmartRecommendationsScreenState extends State<SmartRecommendationsScreen>
  }
 
 
+
+  void _showAssignmentDetails(Assignment assignment) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(assignment.title),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('subject: ${assignment.subject}'),
+            const SizedBox(height: 8),
+            Text('Description: ${assignment.description}'),
+            const SizedBox(height: 8),
+            Text('Due: ${_formatDate(assignment.deadline)}'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+
  Widget _buildInfoChip(IconData icon, String label, Color color) {
    return Chip(
      avatar: Icon(icon, size: 16, color: color),

@@ -16,7 +16,7 @@ class ConnectivityService extends ChangeNotifier {
   void _init() {
     _connectivity.checkConnectivity().then((result) {
       _handleConnectivityChange(result);
-    })
+    });
     
     _connectivity.onConnectivityChanged.listen((result) {
         _handleConnectivityChange(result);
@@ -84,7 +84,7 @@ class ConnectivityService extends ChangeNotifier {
           const Icon(Icons.wifi_off, size: 16, color: Colors.white),
           const SizedBox(width: 8),
           const Text(
-            'Offline Mode – Some features may be limited',
+            'Offline Mode, Some features may be limited',
             style: TextStyle(color: Colors.white, fontSize: 12),
           ),
         ],
