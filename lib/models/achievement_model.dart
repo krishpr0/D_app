@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart'
+import 'package:flutter/material.dart';
 
 enum AchievementType {
   //Basci Achievements
@@ -347,6 +347,145 @@ class Achievement {
 
     
     void addStudySession(int minutes, {bool isNight = false, bool isEarly = false}) {
-      
+      totalStudyMinutes += minutes;
+      totalStudySessions++;
+      if (isNight) totalNightSessions++;
+      if (isEarly) totalEarlySessions++;
+    }
+
+    void addBreak(bool perfect) {
+      totalBreaksTaken++;
+      if (perfect) totalPerfectBreaks++;
+    }
+
+    void addAssignmentCompletion(String subject, int minutesTaken, bool isEarly, bool isPerfect) {
+      totalAssignmentsCompleted++;
+      subjectCompletion[subject] = (subjectCompletion[subject] ?? 0) + 1;
+      subjectProgress[subject] = (subjectProgress[subject] ?? 0) + 1;
+
+      if (minutesTaken < fastestCompletionMinutes) {
+        fastestCompletionMinutes = minutesTaken;
+      }
+
+      if (isEarly) totalEarlyCompletions++;
+      if (isPerfect) perfectScoreCount++;
+
+      final total = totalAssignmentsCompleted;
+      averageCompletionMinutes = ((averageCompletionMinutes * (total - 1)) + minutesTaken) ~/ total;
+    }
+
+
+    void addClassrooms(String type) {
+        if (type == 'create') {
+          totalClassroomsCreated++;
+        } else {
+          totalClassroomsJoined++;
+        }
+    }
+
+
+    void addAchievement(Achievement achievement) {
+      if (!achievements.contains(achievement)) {
+        achievements.add(achievement);
+
+        if (achievement.isSecret) secretAchievementsFound++;
+        addXP(achievement.xpReward, reason: 'Unlocked: ${achievement.title}');
+      }
+    }
+
+
+    double getCompletionRate() {
+      if (totalAssignmentsCompleted == 0) return 0;
+      return (totalAssignmentsCompleted / (totalAssignmentsCompleted + 10)) * 100;
+    }
+
+
+    Map<String, dynamic> toJson() => {
+      'userId': userId,
+      'userName': userName,
+      'avatarUrl': avatarUrl,
+      'level': level,
+      'currentXP': currentXP,
+      'totalXP': totalXP,
+      'streakDays': streakDays,
+      'longestStreak': longestStreak,
+      'lastStudyDate': lastStudyDate.toIso8601String(),
+      'accountCreated': accountCreated.toIso8601String(),
+      'achievements': achivements.map((a) => a.toJson()).toList(),
+      'subjectProgress': subjectProgress,
+      'subjectCompletion': subjectCompletion,
+      'assignmentHistory': assignmentHistory,
+      'stats': stats,
+      'totalStudyMinutes': totalStudyMinutes,
+      'totalStudySessioins': totalStudySessions,
+      'totalBreaksTaken': totalBreaksTaken,
+      'totalPerfectBreaks': totalPerfectBreaks,
+      'totalNightSessions': totalNightSessions,
+      'totalEarlySessions': totalEarlySessions,
+      'totalAssignmentsCompleted': totalAssignmentsCompleted,
+      'totalAssignmentsCreated': totalAssignmentsCreated,
+      'totalAssignmentsGraded': totalAssignmentsGraded,
+      'totalAssignmentsJoined': totalAssignmentsJoined,
+      'totalAssignmentsCreated': totalAssignmentsCreated,
+      'fastestCompletionMinutes': fastestCompletionMinutes,
+      'averageCompletionMinutes': averageCompletionMinutes,
+      'totalEarlyCompetitions': totalEarlyCompletions,
+      'perfectScoreCount': perfectScoreCount,
+      'perfectWeekCount': perfectWeekCount,
+      'perfectMonthCount': perfectMonthCount,
+      'currentSubjectStreak': currentSubjectStreak,
+      'subjectStreaks': subjectStreaks,
+      'friendsCount': friendsCount,
+      'helpGivenCount': helpGivenCount,
+      'helpReceivedCount': helpReceivedCount,
+      'secretAchievementsFound': secretAchievementsFound,
+      'legendaryActions': legendaryActions,
+      'godTierActions': godTierActions,
+    };
+
+
+    factory UserProfile.fromJson(Map<String, dynamic> json) {
+      return UserProfile(
+        userId: json['userId'],
+        userName: json['userName'],
+        avatarUrl: json['avatarUrl'] ?? '',
+        level: json['level'],
+        currentXP: json['currentXP'],
+        totalXP: json['totalXP'],
+        streakDays: json['streakDays'],
+        longestStreak: json['longestStreak'] ?? 0,
+        lastStudyDate: DateTime.parse(json['lastStudyDate']),
+        accountCreated: DateTime.parse(json['accountCreated']),
+        achivements: (json['achievements'] as List).map((a) => Achievement.fromJson(a)).toList(),
+        subjectProgress: Map<String, int>.from(json['subjectProgres'] ?? {}),
+        subjectCompletion: Map<String, int>.from(json['subejctCompletions'] ?? {}),
+        assignmentHistory: Map<String, int>.from(json['assignmentHistory'] ?? {}),
+        stats: Map<String, dynamic>.from(json['stats'] ?? {}),
+        totalStudyMinutes: json['totalStudyMinutes'] ?? 0,
+        totalStudySessions: json['totalStudySessions'] ?? 0,
+        totalBreaksTaken: json['totalBreaksTaken']?? 0,
+        totalPerfectBreaks: json['totalPerfectBreaks'] ?? 0,
+        totalNightSessions: json['totalNightSessions'] ?? 0,
+        totalEarlySessions: json['totalEarlySessions'] ?? 0,
+        totalAssignmentsCompleted: json['totalAssignmentsCompleted'] ?? 0,
+        totalAssignmentsGraded: json['totalAssignmentsGraded'] ?? 0,
+        totalAssignmentsCreated: json['totalAssignmentsCreated'] ?? 0,
+        totalClassroomsJoined: json['totalClasroomJoined'] ?? 0,
+        totalClassroomsCreated: json['totalClassroomsCreated'] ?? 0,
+        fastestCompletionMinutes: json['fastestCompletionMinutes'] ?? 999999,
+        averageCompletionMinutes: json['averageCompletionMinutes'] ?? 0,
+        totalEarlyCompletions: json['totalEarlyCompletions'] ?? 0,
+        perfectScoreCount: json['perfectScreoCount'] ?? 0,
+        perfectWeekCount: json['perfectWeekCount'] ?? 0,
+        perfectMonthCount: json['perfectMonthCount'] ?? 0,
+        currentSubjectStreak: json['currentSubjectStreak'] ?? 0,
+        subjectStreaks: Map<String, int>.from(json['subjectStreaks'] ?? {}),
+        friendsCount: json['friendsCount'] ?? 0,
+        helpGivenCount: json['helpGivenCount'] ?? 0,
+        helpReceivedCount: json['helpReceviedCount'] ?? 0,
+        secretAchievementsFound: json['secretAchievementsFound'] ?? 0,
+        legendaryActions: json['legendaryActions'] ?? 0,
+        godTierActions: json['godTierActions'] ?? 0,
+      );
     }
   }
