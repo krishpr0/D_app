@@ -1,3 +1,6 @@
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/material.dart';
+
 class StudySession {
   String id;
   String subject;
@@ -11,8 +14,8 @@ class StudySession {
 
 
   StudySession({
-      required this.id,
-      required this.subject,
+    required this.id,
+    required this.subject,
     required this.startTime,
     required this.endTime,
     required this.duration,
@@ -23,12 +26,11 @@ class StudySession {
   });
 
 
-
   factory StudySession.fromJson(Map<String, dynamic> json) {
     return StudySession(
       id: json['id'],
       subject: json['subject'],
-      startTime: DateTime.parse(json['startTune']),
+      startTime: DateTime.parse(json['startTime']),
       endTime: DateTime.parse(json['endTime']),
       duration: Duration(minutes: json['duration']),
       breaksTaken: json['breaksTaken'],
@@ -38,46 +40,13 @@ class StudySession {
     );
   }
 
+
   Map<String, dynamic> toJson() => {
     'id': id,
     'subject': subject,
     'startTime': startTime.toIso8601String(),
     'endTime': endTime.toIso8601String(),
-    'duration': duration.inMinutes,
-    'breaksTaken': breaksTaken,
-    'notes': notes,
-    'completed': completed,
-    'rating': rating,
+    'duration':
   };
-}
-
-
-class StudyGoal {
-  int dailyMinutes;
-  int weeklyMinutes;
-  int streakDays;
-  DateTime lastStudyDate;
-
-  StudyGoal({
-    this.dailyMinutes = 120,
-    this.weeklyMinutes = 600,
-    this.streakDays = 0,
-    required this.lastStudyDate,
-});
-
-  Map<String, dynamic> toJson() => {
-    'dailyMinutes': dailyMinutes,
-    'weeklyMinutes': weeklyMinutes,
-    'streakDays': streakDays,
-    'lastStudyDate': lastStudyDate.toIso8601String(),
-  };
-
-  factory StudyGoal.fromJson(Map<String, dynamic> json) {
-    return StudyGoal(
-      dailyMinutes: json['dailyMinutes'],
-      weeklyMinutes: json['weeklyMinutes'],
-      streakDays: json['streakDays'],
-      lastStudyDate: DateTime.parse(json['lastStudyDate']),
-    );
-  }
+  
 }
