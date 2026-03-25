@@ -5,7 +5,7 @@ import '../main.dart';
 
 
 class StudyTimerScreen extends StatefulWidget {
-  const StudyTimerScreen([super.key]);
+  const StudyTimerScreen({super.key});
 
   @override
   State<StudyTimerScreen> createState() => _StudyTimerScreenState();
@@ -25,24 +25,24 @@ class _StudyTimerScreenState extends State<StudyTimerScreen> {
             icon: const Icon(Icons.bar_chart),
             onPressed: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const StudyStaticsScreen()),
+              MaterialPageRoute(builder: (_) => const StudyStatisticScreen()),
             ),
           ),
         ],
       ),
 
-      body: Consumer<StudyTimerScreen>(
-        builder: (context, timer, child) {
-          if (timer.isRunning) {
-            return _buildActiveTimer(timer);
+      body: Consumer<StudyTimerService>(
+        builder: (context, studyTimer, child) {
+          if (studyTimer.isRunning) {
+            return _buildActiveTimer(studyTimer);
           }
-          return _buildStartTimer(timer);
+          return _buildStartTimer(studyTimer);
         },
       ),
     );
   }
 
-  Widget _buildStartTimer(StudyTimerScreen timer) {
+  Widget _buildStartTimer(StudyTimerService studyTimer) {
     final subjects = getAllSubjects();
     return Center(
       child: Padding(
@@ -62,7 +62,7 @@ class _StudyTimerScreenState extends State<StudyTimerScreen> {
             style: TextStyle(fontSize: 16, color: Colors.grey),
             ),
             const SizedBox(height: 32),
-            DropdownButtonFromField<String>(
+            DropdownButtonFormField<String>(
               value: _selectedSubject.isEmpty ? null : _selectedSubject,
               decoration: const InputDecoration(
                 labelText: 'Select Subject',
@@ -80,25 +80,24 @@ class _StudyTimerScreenState extends State<StudyTimerScreen> {
             ),
 
             const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _selectedSubject.styleFrom(
-                ? null : () => timer.startTimer(_selectedSubject),
-                   style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 50),
-                     backgroundColor: Colors.green,
-                 ),
-                  child: const Text(
-                 'Start Studying',
-                  style: TextStyle(fontSize: 18),
-                 ),
-              ),
+          ElevatedButton(
+            onPressed: _selectedSubject.isEmpty ? null : () {
+              studyTimer.startTimer(_selectedSubject);
+            },
+            style: ElevatedButton.styleFrom(
+              minimumSize: const Size(double.infinity, 50),
+              backgroundColor: Colors.green,
             ),
+            child: const Text('Start Studying', 
+              style: TextStyle(fontSize: 18),
+            ),
+          ),
           ],
         ),
       ),
     );
   }
-}
+
 
 
 Widget _buildActiveTimer(StudyTimerService timer) {
@@ -117,7 +116,7 @@ Widget _buildActiveTimer(StudyTimerService timer) {
           ),
 
           const SizedBox(height: 16),
-          Text('${timer.breakSeconds ~/ 60}:${((timer.breakSeconds % 60).toString().padLeft(2, '0')}',
+          Text('${timer.breakSeconds ~/ 60}:${(timer.breakSeconds % 60).toString().padLeft(2, '0')}',
         style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
           ),
         ] else ...[
@@ -143,7 +142,7 @@ Widget _buildActiveTimer(StudyTimerService timer) {
   children: [
     if (!timer.isBreak) ...[
       ElevatedButton.icon(
-  onPressed: timer.takeBreak(),
+  onPressed: () {timer.takeBreak();},
   icon: const Icon(Icons.coffee),
   label: const Text('Take a Break'),
   style: ElevatedButton.styleFrom(
@@ -154,7 +153,7 @@ Widget _buildActiveTimer(StudyTimerService timer) {
   ],
 
     ElevatedButton.icon(
-  onPressed: timer.cancelTimer,
+  onPressed: () {timer.cancelTimer();},
   icon: const Icon(Icons.cancel),
   label: const Text('Cancel'),
   style: ElevatedButton.styleFrom(backgroundColor: Colors.red,
@@ -164,7 +163,7 @@ Widget _buildActiveTimer(StudyTimerService timer) {
   if (timer.isBreak) ...[
     const SizedBox(width: 16),
       ElevatedButton.icon(
-  onPressed: timer.endBreak,
+  onPressed: () {timer.endBreak();},
   icon: const Icon(Icons.play_arrow),
   label: const Text('End Break Earlyyyy!!!!!!'),
   style: ElevatedButton.styleFrom(
@@ -189,7 +188,7 @@ class StudyStatisticScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Study Statistics'),
       ),
-      body: Consumer<StudyTimerScreen>(
+      body: Consumer<StudyTimerService>(
         builder: (context, timer, child) {
           final totalMinutes = timer.getTotalStudyMinutes();
           final todayMinutes = timer.getTodayStudyMinutes();
@@ -282,5 +281,3 @@ class StudyStatisticScreen extends StatelessWidget {
     return '$mins min';
   }
 }
-
-

@@ -18,6 +18,7 @@ class StudyTimerService extends ChangeNotifier {
 
   List<StudySession> get sessions => _sessions;
   bool get isRunning => _isRunning;
+  int get breaksTaken => _breaksTaken;
   int get currentSeconds => _currentSeconds;
   String get currentSubject => _currentSubject;
   bool get isBreak => _isBreak;
