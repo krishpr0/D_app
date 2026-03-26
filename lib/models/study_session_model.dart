@@ -41,12 +41,16 @@ class StudySession {
   }
 
 
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'subject': subject,
-    'startTime': startTime.toIso8601String(),
-    'endTime': endTime.toIso8601String(),
-    'duration':
-  };
-  
+  Map<String, dynamic> toJson() =>
+      {
+        'id': id,
+        'subject': subject,
+        'startTime': startTime.toIso8601String(),
+        'endTime': endTime.toIso8601String(),
+        'duration': duration.inMinutes,
+        'breaksTaken': breaksTaken,
+        'notes': notes,
+        'completed': completed,
+        'rating': rating,
+      };
 }
