@@ -18,6 +18,7 @@ import 'package:cross_file/cross_file.dart';
 
 // Models
 import 'models/assignment_model.dart';
+
 import 'models/classroom_model.dart';
 
 // Services
@@ -311,6 +312,9 @@ class Assignment {
     'timeSpent': timeSpent?.inMicroseconds,
   };
 }
+
+final gamifciation = Provider.of<GamificationService>(context, listen: false);
+gamification.onAssignmentCompleted(completedAssignment, timeSpent);
 
 class ClassroomService {
     static final ClassroomService _instance = ClassroomService._internal();
@@ -697,6 +701,11 @@ class _MyAppState extends State<MyApp> {
           ChangeNotifierProvider(create: (_) => ThemeService()),
           ChangeNotifierProvider<StudyTimerService>(create: (_) => StudyTimerService()),
           ChangeNotifierProvider(create: (_) => ConnectivityService()),
+          ChangeNotifierProvider<GamificationService>(
+            create: (context) => GamificationService(
+              Provider.of<AuthService>(context, listen: false),
+            ),
+          ),
         ],
 
         child: Consumer<ThemeService>(
@@ -1340,6 +1349,18 @@ class _AssignmentManagerState extends State<AssignmentManager> {
             onPressed: () {
               widget.themeService.toggleTheme();
             },
+          ),
+
+          //Button for the gamification screen
+          IconButton(
+            icon: const Icon(Icons.emoji_events),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const GamificationScreen()),
+              );
+            },
+            tooltip: 'Achievements',
           ),
         ],
       ),
