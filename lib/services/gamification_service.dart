@@ -617,9 +617,80 @@ void _initializeAchievements() {
 
 
 
+          void _showVoiceResponse(String response) {
+
+          }
+
           
-        
+
+          ///CELEbartion///
+          void _showCelebration(int xp, int coins) {
+
+          }
+
+
+          void _showQuestCompletion(DailyQuest quest) {
+
+          }
 
 
 
+          //Background updates
+          void _startBackgroundUpdates() {
+            Timer.periodic(const Duration(minutes: 30), (timer) {
+              _activePet?.update();
+              _checkDailyReset();
+              notifyListeners();
+            });
+          }
+
+
+          void _checkDailyReset() {
+            final now = DateTime.now();
+            if (_dailyQuests.isNotEmpty && _dailyQuests.first.date.day != now.day) {
+              _initializeDailyQuests();
+              _dailyStats.clear();
+              _saveAllData();
+            }
+          }
+
+
+          ///DATA PERSISTENCE///
+          Future<void> _saveAllData() async {
+            final prefs = await SharedPreferences.getInstance();
+            final profileData = prefs.getString('ultimate_profile');
+            if (profileData != null) {
+              _profile = UserProfile.fromJson(jsonDecode(profileData));
+            }
+
+            final coinsData = prefs.getInt('coins');
+            if (coinsData != null) _coins = coinsData;
+
+            final gemsData = prefs.getInt('gems');
+            if (gemsData != null) _gems = gemsData;
+
+            final friendsData = prefs.getString('friends');
+            if (friendsData != null) {
+              _friends = friendsData.map((f) => Friend.fromJson(jsonDecode(f))).toList();
+            }
+
+            final petData = prefs.getString('active_pet');
+            if (petData != null) {
+              _activePet = StudyPet.fromJson(jsonDecode(petData));
+            }
+            notifyListeners();
+          }
+
+
+
+          Future<void> _loadAllData() async {
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setString('ultimate_profile', jsonEncode(_profile.toJson()));
+            await prefs.setInt('coins', _coins);
+            await prefs.setInt('gems', _gems);
+            await prefs.setStringList('friends', _friends.map((f) => jsonEncode(f.toJson())).toList());
+            if (_activePet != null) {
+              await prefs.setString('active_pet', jsonEncode(_activePet!.toJson()));
+            }
+          }
 }
