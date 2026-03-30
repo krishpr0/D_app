@@ -5,6 +5,8 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:schoolapp/screens/hub_screen.dart';
+import 'package:schoolapp/services/gamification_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -701,9 +703,9 @@ class _MyAppState extends State<MyApp> {
           ChangeNotifierProvider(create: (_) => ThemeService()),
           ChangeNotifierProvider<StudyTimerService>(create: (_) => StudyTimerService()),
           ChangeNotifierProvider(create: (_) => ConnectivityService()),
-          ChangeNotifierProvider<GamificationService>(
-            create: (context) => GamificationService(
-              Provider.of<AuthService>(context, listen: false),
+          ChangeNotifierProvider<UltimateGamificationService>(
+            create: (context) => UltimateGamificationService(
+              Provider.of<StudyTimerService>(context, listen: false),
             ),
           ),
         ],
@@ -1362,6 +1364,19 @@ class _AssignmentManagerState extends State<AssignmentManager> {
             },
             tooltip: 'Achievements',
           ),
+
+
+          //button for achiv
+            IconButton(
+              icon: const Icon(Icons.games),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const HubScreen()),
+                );
+              },
+              tooltip: 'Gamification Tab',
+            ),
         ],
       ),
 
