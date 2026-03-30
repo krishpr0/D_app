@@ -16,7 +16,7 @@ class UltimateGamificationService extends ChangeNotifier {
   List<Friend> _friends = [];
   List<StudyGroup> _studyGroups = [];
   List<Challenge> _activeChallenges = [];
-  List<DailyQuest> _dailyQuests = [];
+  List<DailyQuest> _DailyQuests = [];
   List<ShopItem> _shopItems = [];
   List<FocusMusic> _musicLibrary = [];
   List<AICoachTip> _coachTips = [];
@@ -38,7 +38,7 @@ class UltimateGamificationService extends ChangeNotifier {
   List<Friend> get friends => _friends;
   List<StudyGroup> get studyGroups => _studyGroups;
   List<Challenge> get activeChallenges => _activeChallenges;
-  List<DailyQuests> get dailyQuests => _dailyQuests;
+  List<DailyQuest> get dailyQuests => _DailyQuests;
   List<ShopItem> get shopItems => _shopItems;
   List<FocusMusic> get musicLibrary => _musicLibrary;
   List<AICoachTip> get coachTips => _coachTips;
@@ -615,33 +615,28 @@ void _initializeAchievements() {
             }
           }
 
-
-
-          void _showVoiceResponse(String response) {
-
+          void _showVoiceResponse(String message) {
+          //shows the voice respose
           }
 
-          
 
-          ///CELEbartion///
+          //celebrations
           void _showCelebration(int xp, int coins) {
-
+          //shows the celetbarion animation
           }
-
 
           void _showQuestCompletion(DailyQuest quest) {
-
+          //shpows the quest completio dialog
           }
 
 
-
-          //Background updates
+          ///BAckground updates///
           void _startBackgroundUpdates() {
-            Timer.periodic(const Duration(minutes: 30), (timer) {
-              _activePet?.update();
-              _checkDailyReset();
-              notifyListeners();
-            });
+          Timer.periodic(const Duration(minutes: 30), (timer) {
+            _activePet?.update();
+            _checkDailyReset();
+            notifyListeners();
+          });
           }
 
 
@@ -650,47 +645,51 @@ void _initializeAchievements() {
             if (_dailyQuests.isNotEmpty && _dailyQuests.first.date.day != now.day) {
               _initializeDailyQuests();
               _dailyStats.clear();
-              _saveAllData();
+              _saveAllDate();
             }
           }
 
 
-          ///DATA PERSISTENCE///
-          Future<void> _saveAllData() async {
-            final prefs = await SharedPreferences.getInstance();
-            final profileData = prefs.getString('ultimate_profile');
-            if (profileData != null) {
-              _profile = UserProfile.fromJson(jsonDecode(profileData));
-            }
+              ///DATA persistenace//
+              Future<void> _loadAllData() async {
+          final prefs = await SharedPreferences.getInstance();
 
-            final coinsData = prefs.getInt('coins');
-            if (coinsData != null) _coins = coinsData;
-
-            final gemsData = prefs.getInt('gems');
-            if (gemsData != null) _gems = gemsData;
-
-            final friendsData = prefs.getString('friends');
-            if (friendsData != null) {
-              _friends = friendsData.map((f) => Friend.fromJson(jsonDecode(f))).toList();
-            }
-
-            final petData = prefs.getString('active_pet');
-            if (petData != null) {
-              _activePet = StudyPet.fromJson(jsonDecode(petData));
-            }
-            notifyListeners();
+          final profileData = prefs.getString('ultimate_proffile');
+          if (profileData != null) {
+            _profile = UserProfile.fromJson(jsonDecode(profileData));
           }
 
+          final coinsData = prefs.getInt('coins');
+          if (coinsData != null) _coins = coinsData;
 
+          final gemsData = prefs.getInt('gems');
+          if (gemsData != null) _gems = gemsData;
 
-          Future<void> _loadAllData() async {
-            final prefs = await SharedPreferences.getInstance();
-            await prefs.setString('ultimate_profile', jsonEncode(_profile.toJson()));
-            await prefs.setInt('coins', _coins);
-            await prefs.setInt('gems', _gems);
-            await prefs.setStringList('friends', _friends.map((f) => jsonEncode(f.toJson())).toList());
-            if (_activePet != null) {
-              await prefs.setString('active_pet', jsonEncode(_activePet!.toJson()));
-            }
+          final friendsData = prefs.getStringList('friends');
+          if (friendsData != null) {
+            _friends = friendsData.map((f) => Friend.fromJson(jsonDecode(f))).toList();
           }
+
+          final petData = prefs.getString('active_pet');
+          if (petData != null) {
+            _activePet = StudyPet.fromJson(jsonDecode(petData));
+          }
+          notifyListeners();
+              }
+
+              Future<void> _saveAllData() async {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('ultimate_profile', jsonEncode(_profile.toJson()));
+          await prefs.setInt('coins', _coins);
+          await prefs.setInt('gems', _gems);
+          await prefs.setStringList('friends', _friends.map((f) => jsonEncode(f.toJson())).toList());
+          if (_activePet != null) {
+            await prefs.setString('active_pet', jsonEncode(_activePet!.toJson()));
+          }
+              }
+          
+        
+
+
+
 }
