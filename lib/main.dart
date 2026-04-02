@@ -32,7 +32,7 @@ import 'services/recommendation_service.dart';
 // Screens
 import 'screens/login_screen.dart';
 import 'screens/signup_screen.dart';
-import 'screens/study_timer_screen.dart';
+import '../screens/study_timer_screen.dart';
 import 'screens/smart_recommendations_screen.dart';
 
 void main() async {
@@ -708,6 +708,11 @@ class _MyAppState extends State<MyApp> {
               Provider.of<StudyTimerService>(context, listen: false),
             ),
           ),
+          ChangeNotifierProvider<QuestionService>(
+            create: (context) => QuestionService(
+              Provider.of<UltimateGamificationService>(context, listen: false),
+            ),
+          ),
         ],
 
         child: Consumer<ThemeService>(
@@ -1377,6 +1382,18 @@ class _AssignmentManagerState extends State<AssignmentManager> {
               },
               tooltip: 'Gamification Tab',
             ),
+
+          //Button for question bank
+          IconButton(
+            icon: const Icon(Icons.quiz),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const QuestionBankScreen()),
+              );
+            },
+            tooltip: 'Question Bank',
+          ),
         ],
       ),
 
