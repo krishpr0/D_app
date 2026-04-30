@@ -5,8 +5,6 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:schoolapp/screens/hub_screen.dart';
-import 'package:schoolapp/services/gamification_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -315,8 +313,6 @@ class Assignment {
   };
 }
 
-final gamifciation = Provider.of<GamificationService>(context, listen: false);
-gamification.onAssignmentCompleted(completedAssignment, timeSpent);
 
 class ClassroomService {
     static final ClassroomService _instance = ClassroomService._internal();
@@ -703,7 +699,7 @@ class _MyAppState extends State<MyApp> {
           ChangeNotifierProvider(create: (_) => ThemeService()),
           ChangeNotifierProvider<StudyTimerService>(create: (_) => StudyTimerService()),
           ChangeNotifierProvider(create: (_) => ConnectivityService()),
-          ChangeNotifierProvider<UltimateGamificationService>(
+/*          ChangeNotifierProvider<UltimateGamificationService>(
             create: (context) => UltimateGamificationService(
               Provider.of<StudyTimerService>(context, listen: false),
             ),
@@ -712,7 +708,7 @@ class _MyAppState extends State<MyApp> {
             create: (context) => QuestionService(
               Provider.of<UltimateGamificationService>(context, listen: false),
             ),
-          ),
+          ),*/
         ],
 
         child: Consumer<ThemeService>(
@@ -788,7 +784,7 @@ class _AssignmentManagerState extends State<AssignmentManager> {
       'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'
     ];
     return '${dt.day} ${months[dt.month - 1]} ${dt.year}, ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-  }   
+  }
 
 
   @override
@@ -797,7 +793,7 @@ class _AssignmentManagerState extends State<AssignmentManager> {
     _loadAssignments();
     _classroomService.loadClassrooms();
     _classroomService.loadClassroomAssignments();
-    NotificationService.initialize();
+   // NotificationService.initialize();
     widget.themeService.addListener(_onThemeChanged);
   }
 
@@ -1358,6 +1354,7 @@ class _AssignmentManagerState extends State<AssignmentManager> {
             },
           ),
 
+/*
           //Button for the gamification screen
           IconButton(
             icon: const Icon(Icons.emoji_events),
@@ -1382,9 +1379,10 @@ class _AssignmentManagerState extends State<AssignmentManager> {
               },
               tooltip: 'Gamification Tab',
             ),
+*/
 
           //Button for question bank
-          IconButton(
+          /*IconButton(
             icon: const Icon(Icons.quiz),
             onPressed: () {
               Navigator.push(
@@ -1393,7 +1391,7 @@ class _AssignmentManagerState extends State<AssignmentManager> {
               );
             },
             tooltip: 'Question Bank',
-          ),
+          ),*/
         ],
       ),
 
@@ -2024,7 +2022,7 @@ class _AssignmentFormState extends State<AssignmentForm> {
       final months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
       final hour  = dt.hour.toString().padLeft(2, '0');
       final minute = dt.minute.toString().padLeft(2, '0');
-      return '${dt.day} ${months[dt.month - 1]} ${dt.year}, $hour:$minute'; 
+      return '${dt.day} ${months[dt.month - 1]} ${dt.year}, $hour:$minute';
     }
 
 
@@ -2070,7 +2068,6 @@ class _AssignmentFormState extends State<AssignmentForm> {
     final DateTime finalDateTime = DateTime(
       pickedDate.year,
       pickedDate.month,
-      pickedDate.day,
       pickedDate.day,
       pickedTime.hour,
       pickedTime.minute,
@@ -2259,14 +2256,14 @@ class _AssignmentFormState extends State<AssignmentForm> {
                 ),
 
 
-                if (_deadline == null) 
+                if (_deadline == null)
                   Padding(
                     padding: const EdgeInsets.only(left: 16.0, top: 4),
                     child: Text(
                       'Please select a date and time',
                       style: TextStyle(color: Colors.red[700]),
                     ),
-                    ),        
+                    ),
 
 
               const SizedBox(height: 20),
@@ -2543,10 +2540,6 @@ class _AssignmentDetailState extends State<AssignmentDetail> {
   void _startTimerUpdates() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_assignment.timerStartTime != null && mounted) {
-        Text(
-          'Current Session: ${_formatDuration(DateTime.now().difference(_assignment.timerStartTime!))}',
-          style: const TextStyle(fontSize: 14, color: Colors.green),
-        );
       setState(() {
 
       });
