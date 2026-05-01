@@ -61,7 +61,15 @@ class _SignupScreenState extends State<SignupScreen> {
           if (success) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Sign Up failed, Email may already exists'),
+                content: Text('Sign Up successful!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+            Navigator.pop(context);
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Sign Up failed, Email may exisst already'),
                 backgroundColor: Colors.red,
               ),
             );

@@ -15,6 +15,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:cross_file/cross_file.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 // Models
 import 'models/assignment_model.dart';
@@ -36,9 +37,13 @@ import 'screens/smart_recommendations_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
- /* await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );*/
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    print('Firebase initialization failed: $e');
+  }
+
+  runApp(const MyApp());
 }
 
 enum AssignmentStatus {Todo, InProgress, Completed}
