@@ -8,7 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:schoolapp/screens/dashboard_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart' hide Priority;
 import 'package:table_calendar/table_calendar.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:share_plus/share_plus.dart';
@@ -49,8 +49,7 @@ void main() async {
   runApp(const MyApp());
 }
 
-enum AssignmentStatus {Todo, InProgress, Completed}
-enum Priority {Low, Medium, High, Urgent}
+
 enum UserRole { Student, Teacher}
 
 //1. Enums for subjects and teacher
@@ -252,74 +251,7 @@ List<String> dynamicTeachers = [];
     }
   }
 
-class Assignment {
-  String subject;
-  String title;
-  String description;
-  DateTime deadline;
-  String submitTo;
-  AssignmentStatus status;
-  DateTime? startDate;
-  DateTime? completionDate;
-  String? imagePath;
-  Priority priority;
-  Duration? timeSpent;
-  DateTime? timerStartTime;
 
-  Assignment({
-    required this.subject,
-    required this.title,
-    required this.description,
-    required this.deadline,
-    required this.submitTo,
-    this.status = AssignmentStatus.Todo,
-    this.startDate,
-    this.completionDate,
-    this.imagePath,
-    this.priority = Priority.Medium,
-    this.timeSpent,
-    this.timerStartTime,
-  });
-
-  void startTimer() => timerStartTime = DateTime.now();
-
-  void stopTimer() {
-    if (timerStartTime != null) {
-      timeSpent = (timeSpent ?? Duration.zero) + DateTime.now().difference(timerStartTime!);
-      timerStartTime = null;
-    }
-  }
-
-  factory Assignment.fromJson(Map<String, dynamic> json) {
-    return Assignment(
-      subject: json['subject'],
-      title: json['title'],
-      description: json['description'],
-      deadline: DateTime.parse(json['deadline']),
-      submitTo: json['submitTo'],
-      status: AssignmentStatus.values[json['status'] ?? 0],
-      startDate: json['startDate'] != null ? DateTime.tryParse(json['startDate']) : null,
-      completionDate: json['completionDate'] != null ? DateTime.tryParse(json['completionDate']) : null,
-      imagePath: json['imagePath'],
-      priority: Priority.values[json['priority'] ?? 1],
-      timeSpent: json['timeSpent'] != null ? Duration(microseconds: json['timeSpent']) : null,
-    );
-  }
-
-  Map<String, dynamic> toJson() => {
-    'subject': subject,
-    'title': title,
-    'description': description,
-    'deadline': deadline.toIso8601String(),
-    'submitTo': submitTo,
-    'status': status.index,
-    'startDate': startDate?.toIso8601String(),
-    'completionDate': completionDate?.toIso8601String(),
-    'imagePath': imagePath,
-    'priority': priority.index,
-    'timeSpent': timeSpent?.inMicroseconds,
-  };
-}
 
 
 class ClassroomService {

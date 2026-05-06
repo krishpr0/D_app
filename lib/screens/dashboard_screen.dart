@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/dashboard_service.dart';
 import '../models/assignment_model.dart';
-import '../main.dart';
 
 
 
@@ -268,13 +267,13 @@ class DashboardScreen extends StatelessWidget {
   }
 
   String _daysLeft(DateTime deadline) {
-    final days = date.difference(DateTime.now()).inDays;
+    final days = deadline.difference(DateTime.now()).inDays;
     if (days <= 0) return 'Overdue';
     if (days == 1) return 'Tomorrow';
     return '$days days left';
   }
 
-  Color _getPriorityColor(AssignmentPriority priority) {
+  Color _getPriorityColor(Priority priority) {
     switch (priority) {
       case Priority.Low: return Colors.green;
       case Priority.Medium: return Colors.orange;

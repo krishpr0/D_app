@@ -22,7 +22,7 @@ class Assignment {
 
 
   Assignment({
-    required this.id,
+    String? id,
     required this.subject,
     required this.title,
     required this.description,
@@ -35,10 +35,10 @@ class Assignment {
     this.priority = Priority.Medium,
     this.timeSpent,
     this.timerStartTime,
-  });
+  }) : id = id ?? DateTime.now().millisecondsSinceEpoch.toString();
 
 
-  void startTime() => timerStartTime = DateTime.now();
+  void startTimer() => timerStartTime = DateTime.now();
 
 
   void stopTimer() {
