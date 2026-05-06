@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:schoolapp/screens/dashboard_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -17,6 +18,7 @@ import 'package:provider/provider.dart';
 import 'package:cross_file/cross_file.dart';
 import 'package:firebase_core/firebase_core.dart';
 
+
 // Models
 import 'models/assignment_model.dart';
 
@@ -27,6 +29,7 @@ import 'services/auth_service.dart';
 import 'services/connectivity_service.dart';
 import 'services/study_timer_service.dart';
 import 'services/recommendation_service.dart';
+import 'services/dashboard_service.dart';
 
 // Screens
 import 'screens/login_screen.dart';
@@ -704,6 +707,7 @@ class _MyAppState extends State<MyApp> {
           ChangeNotifierProvider(create: (_) => ThemeService()),
           ChangeNotifierProvider<StudyTimerService>(create: (_) => StudyTimerService()),
           ChangeNotifierProvider(create: (_) => ConnectivityService()),
+          ChangeNotifierProvider(create: (_) => DashboardService()),
 /*          ChangeNotifierProvider<UltimateGamificationService>(
             create: (context) => UltimateGamificationService(
               Provider.of<StudyTimerService>(context, listen: false),
@@ -1357,6 +1361,24 @@ class _AssignmentManagerState extends State<AssignmentManager> {
             onPressed: () {
               widget.themeService.toggleTheme();
             },
+          ),
+
+
+          //Button fro dashboard
+          IconButton(
+            icon: const Icon(Icons.dashboard),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => DashboardScreen(
+                    assignments: _assignments,
+                    onAssignmentTap: _showAssignmentDetail,
+                  ),
+                ),
+              );
+            },
+            tooltip: 'Dashboard',
           ),
 
 /*
