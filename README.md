@@ -21,10 +21,10 @@ A Flutter based  application for managing assignments, classrooms, study session
 * Student Management – View classroom members and their submissions
 
 ## Study Tools
-*Focus Timer – Pomodoro-style timer with break reminders
-*Study Statistics – Track total study time, daily/weekly breakdowns
-*Study Insights – Analytics dashboard for study patterns
-*Subject Performance – Track completion rates by subject
+* Focus Timer – Pomodoro-style timer with break reminders
+* Study Statistics – Track total study time, daily/weekly breakdowns
+* Study Insights – Analytics dashboard for study patterns
+* Subject Performance – Track completion rates by subject
 
 ## Question SYSTEM
 * Practice Questions – Multiple choice, true/false, short/long answer
@@ -38,9 +38,9 @@ A Flutter based  application for managing assignments, classrooms, study session
 * Subject Distribution – Breakdown of assignments by subject
 
 ## Data Management
-*Export CSV – Export assignments to CSV format
-*Import CSV – Import assignments from CSV files
-*Local Storage – All data stored locally to Device Storage for backup
+* Export CSV – Export assignments to CSV format
+* Import CSV – Import assignments from CSV files
+* Local Storage – All data stored locally to Device Storage for backup
 
 
 
