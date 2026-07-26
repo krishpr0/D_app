@@ -1,31 +1,24 @@
 # schoolapp
 
-A Flutter-based application designed to manage assignments, classrooms, study sessions, and more. Developed for students and teachers for collaborative and efficient work created by students.
+SchoolAPP or aka applicationSCl is an flutter based application developed to manage assignments, classrooms, study sessions, and many more... It is espcially developed for students and teachers collaborations and efficient framework created by students for students... The framework is flutter and the programming language used is Dart. Google's offical application development SDK.
+
 
 ### Features
 
 ## Core Features
 
 * Assignment Management – Add, modify, remove, and monitor assignments
-
 * Kanban Board – Move assignments through Todo/InProgress/Completed sections with drag-and-drop functionality
-
 * Priority System – Assign priorities of Low, Medium, High, and Urgent with corresponding color codes
-
 * Image Attachments – Upload images along with completed assignments
-
 * Time Tracking – Integrated timer to monitor time spent on assignments
-
 * Deadline Reminders – Local notifications for approaching deadlines
 
 ## Classroom Features
 
 * Create Classrooms – Teachers have the ability to set up classrooms using invite codes
-
 * Join Classrooms – Students can enter classrooms by using invite codes
-
 * Classroom Assignments – Generate assignments tailored specifically for classrooms
-
 * Grade Submissions – Teachers can grade student submissions
 * Student Management – View classroom members and their submissions
 
