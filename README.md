@@ -1,22 +1,31 @@
 # schoolapp
 
-A Flutter based  application for managing assignments, classrooms, study sessions, and more. Built for students and teachers for collabrative and easy work built by student.
-
+A Flutter-based application designed to manage assignments, classrooms, study sessions, and more. Developed for students and teachers for collaborative and efficient work created by students.
 
 ### Features
 
 ## Core Features
-* Assignment Management – Create, edit, delete, and track assignments
-* Kanban Board – Drag-and-drop assignments across Todo/InProgress/Completed columns
-* Priority System – Low, Medium, High, Urgent priorities with color coding
-* Image Attachments – Upload images with completed assignments
-* Time Tracking – Built-in timer for tracking time spent on assignments
-* Deadline Reminders – Local notifications for upcoming deadlines
+
+* Assignment Management – Add, modify, remove, and monitor assignments
+
+* Kanban Board – Move assignments through Todo/InProgress/Completed sections with drag-and-drop functionality
+
+* Priority System – Assign priorities of Low, Medium, High, and Urgent with corresponding color codes
+
+* Image Attachments – Upload images along with completed assignments
+
+* Time Tracking – Integrated timer to monitor time spent on assignments
+
+* Deadline Reminders – Local notifications for approaching deadlines
 
 ## Classroom Features
-* Create Classrooms – Teachers can create classrooms with invite codes
-* Join Classrooms – Students can join using invite codes
-* Classroom Assignments – Create assignments specifically for classrooms
+
+* Create Classrooms – Teachers have the ability to set up classrooms using invite codes
+
+* Join Classrooms – Students can enter classrooms by using invite codes
+
+* Classroom Assignments – Generate assignments tailored specifically for classrooms
+
 * Grade Submissions – Teachers can grade student submissions
 * Student Management – View classroom members and their submissions
 
