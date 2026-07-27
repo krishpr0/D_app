@@ -42,6 +42,8 @@ This is kinda helpful for students who wants to try mock tests, pratice qns or e
 * Question Management – Teachers can create and manage questions
 
 ## Analytics & Dashboard
+This is similar to the study tools but most of these featuers are meant for teachers rather than student! altho the students can also access them the teachers are the only one who can edit them!! there are some parts where the students can edit such as in the calendart to add the deadline,  specific days, but the deadline will be automatically added once the teacher assigngs and assignment with a deadline the calender also shows the date and the time of the deadline and it highlights the date in the calendar  as a red color! 
+
 * Smart Dashboard – Overview of upcoming deadlines, completion rates, events, news
 * Analytics Page – Charts and statistics for assignments
 * Calendar View – Visual calendar of assignment deadlines
