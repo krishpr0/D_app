@@ -35,6 +35,8 @@ These are all extra tools that i use while studying such as pomodoro  technique,
 * Subject Performance – Track completion rates by subject
 
 ## Question SYSTEM
+This is kinda helpful for students who wants to try mock tests, pratice qns or even past qns paper! the Teacher can provide it for now but (*Adding a engine to find the mock/past/ qns paper according to the subject and the pubshiler and more criteria*)
+
 * Practice Questions – Multiple choice, true/false, short/long answer
 * Mock Tests – Test with result tracking and limited time
 * Question Management – Teachers can create and manage questions
