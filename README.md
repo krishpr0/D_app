@@ -4,6 +4,8 @@ SchoolAPP or aka applicationSCl is an flutter based application developed to man
 
 
 ### Features
+There are overall 6 main featuers with each of them having upto 3-6 sub features, the features and their sub featuers are listed and explain in short below:-
+
 
 ## Core Features
 
