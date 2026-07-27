@@ -8,6 +8,7 @@ There are overall 6 main featuers with each of them having upto 3-6 sub features
 
 
 ## Core Features
+This  include the base components which builds the Application bare skeleton. It also includes sm goated functionality...
 
 * Assignment Management – Add, modify, remove, and monitor assignments
 * Kanban Board – Move assignments through Todo/InProgress/Completed sections with drag-and-drop functionality
@@ -17,6 +18,7 @@ There are overall 6 main featuers with each of them having upto 3-6 sub features
 * Deadline Reminders – Local notifications for approaching deadlines
 
 ## Classroom Features
+This includes the components which is used for the development of the classroom where teachers and student can collab, share, and submit assignments, tests, everyhing!!~!~!
 
 * Create Classrooms – Teachers have the ability to set up classrooms using invite codes
 * Join Classrooms – Students can enter classrooms by using invite codes
@@ -25,6 +27,8 @@ There are overall 6 main featuers with each of them having upto 3-6 sub features
 * Student Management – View classroom members and their submissions
 
 ## Study Tools
+These are all extra tools that i use while studying such as pomodoro  technique, and also i like to know how much time i spent on each assignment.. and also which did i complete fast.. such as mentioned below!
+
 * Focus Timer – Pomodoro-style timer with break reminders
 * Study Statistics – Track total study time, daily/weekly breakdowns
 * Study Insights – Analytics dashboard for study patterns
